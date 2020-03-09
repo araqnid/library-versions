@@ -37,7 +37,7 @@ fun CoroutineScope.respondAsynchronously(request: HttpServletRequest, context: C
     }
 }
 
-private val logger by lazy { LoggerFactory.getLogger("org.araqnid.espider.libraryversionsdashboard.AsyncHttp")!! }
+private val logger by lazy { LoggerFactory.getLogger("org.araqnid.libraryversions.AsyncHttp")!! }
 
 fun CoroutineScope.respondAsynchronouslyOrShowError(request: HttpServletRequest, response: HttpServletResponse, context: CoroutineContext = EmptyCoroutineContext, handler: suspend CoroutineScope.() -> Unit) {
     return respondAsynchronously(request, context) {

@@ -40,7 +40,7 @@ val versionResolvers = listOf(
         ZuluResolver
 )
 
-private val logger = LoggerFactory.getLogger("org.araqnid.espider.libraryversionsdashboard.VersionResolvers")
+private val logger = LoggerFactory.getLogger("org.araqnid.libraryversions.VersionResolvers")
 
 interface Resolver {
     fun findVersions(httpClient: HttpClient): Flow<String>
