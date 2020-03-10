@@ -14,10 +14,7 @@ fun parseVersion(input: String): Version {
 
 data class VersionPart(val prefix: String, val number: Int, val suffix: String) : Comparable<VersionPart> {
     companion object {
-        val comparator: Comparator<VersionPart> = Comparator.comparing(
-                        VersionPart::number)
-                .thenComparing(VersionPart::suffix)
-                .thenComparing(VersionPart::prefix)
+        val comparator = compareBy<VersionPart> { it.number }.thenBy { it.suffix }.thenBy { it.prefix }
     }
 
     override fun compareTo(other: VersionPart): Int = comparator.compare(this, other)
