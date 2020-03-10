@@ -4,7 +4,7 @@ import kotlinext.js.assign
 import kotlinext.js.jsObject
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-suspend fun <T : Any> AxiosClient.getJson(url: String, config: RequestConfig = noRequestConfig): Response<T> =
+suspend fun <T : Any> AxiosInstance.getJson(url: String, config: AxiosRequestConfig = noRequestConfig): AxiosResponse<T> =
         doRequest(assign(config) {
             this.url = url
             this.method = "get"
@@ -12,7 +12,7 @@ suspend fun <T : Any> AxiosClient.getJson(url: String, config: RequestConfig = n
             this.headers = config.headers.extend("Accept", "application/json")
         })
 
-suspend fun AxiosClient.getText(url: String, config: RequestConfig = noRequestConfig): Response<String> =
+suspend fun AxiosInstance.getText(url: String, config: AxiosRequestConfig = noRequestConfig): AxiosResponse<String> =
         doRequest(assign(config) {
             this.url = url
             this.method = "get"
@@ -26,9 +26,9 @@ private inline fun <V : Any> Dictionary<V>.extend(key: String, value: V): Dictio
     }
 }
 
-private val noRequestConfig = jsObject<RequestConfig> { }
+private val noRequestConfig = jsObject<AxiosRequestConfig> { }
 
-private suspend fun <T> AxiosClient.doRequest(mutableConfig: RequestConfig = noRequestConfig): Response<T> {
+private suspend fun <T> AxiosInstance.doRequest(mutableConfig: AxiosRequestConfig = noRequestConfig): AxiosResponse<T> {
     return suspendCancellableCoroutine { cont ->
         val cancelTokenSource = Axios.CancelToken.source()
         mutableConfig.cancelToken = cancelTokenSource.token

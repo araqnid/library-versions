@@ -3,7 +3,7 @@ package org.araqnid.libraryversions.js
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.araqnid.libraryversions.js.axios.AxiosClient
+import org.araqnid.libraryversions.js.axios.AxiosInstance
 import org.araqnid.libraryversions.js.axios.getText
 
 val versionResolvers = listOf(
@@ -32,7 +32,7 @@ val versionResolvers = listOf(
 )
 
 interface Resolver {
-    fun findVersions(axios: AxiosClient): Flow<String>
+    fun findVersions(axios: AxiosInstance): Flow<String>
 }
 
 fun mavenCentral(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
@@ -53,7 +53,7 @@ class MavenResolver(repoUrl : String,
                     private val filters: List<Regex>) : Resolver {
     private val requestURI = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
-    override fun findVersions(axios: AxiosClient): Flow<String> {
+    override fun findVersions(axios: AxiosInstance): Flow<String> {
         return flow<String> {
             val response = axios.getText(requestURI)
             check(response.status == 200) { "$requestURI: ${response.status} ${response.statusText}" }
@@ -103,7 +103,7 @@ object GradleResolver : Resolver {
     private const val requestURI = "https://gradle.org/releases/"
     private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
 
-    override fun findVersions(axios: AxiosClient): Flow<String> {
+    override fun findVersions(axios: AxiosInstance): Flow<String> {
         return flow {
             val response = axios.getText(requestURI)
             check(response.status == 200) { "$requestURI: ${response.status} ${response.statusText}" }

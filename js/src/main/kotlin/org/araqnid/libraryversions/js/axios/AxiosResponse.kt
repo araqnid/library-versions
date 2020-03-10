@@ -1,10 +1,10 @@
 package org.araqnid.libraryversions.js.axios
 
-external interface Response<T> {
+external interface AxiosResponse<T> {
     val data: T
     val status: Int
     val statusText: String
     val headers: Dictionary<String>
-    val config: RequestConfig
+    val config: AxiosRequestConfig
     val request: dynamic
 }

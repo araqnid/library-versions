@@ -1,6 +1,6 @@
 package org.araqnid.libraryversions.js.axios
 
-external interface RequestConfig {
+external interface AxiosRequestConfig {
     var withCredentials: Boolean // default: false
     var url: String? // default: none
     var method: String // default: GET
@@ -17,19 +17,19 @@ external interface RequestConfig {
     var maxContentLength: Int // default: ?
     var maxRedirects: Int // default: 5
     var socketPath: String? // default: null
-    var proxy: ProxyConfig?
+    var proxy: AxiosProxyConfig?
     var cancelToken: CancelToken? // default: none
 }
 
-external interface ProxyConfig {
+external interface AxiosProxyConfig {
     var host: String
     var port: Int
-    var auth: ProxyAuthConfig
-}
+    var auth: AuthConfig?
 
-external interface ProxyAuthConfig {
-    var username: String
-    var password: String
+    interface AuthConfig {
+        var username: String
+        var password: String
+    }
 }
 
 external interface ProgressEvent
