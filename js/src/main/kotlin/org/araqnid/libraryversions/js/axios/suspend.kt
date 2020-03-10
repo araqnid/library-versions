@@ -30,7 +30,7 @@ private val noRequestConfig = jsObject<RequestConfig> { }
 
 private suspend fun <T> AxiosClient.doRequest(mutableConfig: RequestConfig = noRequestConfig): Response<T> {
     return suspendCancellableCoroutine { cont ->
-        val cancelTokenSource = Axios.cancelToken.source()
+        val cancelTokenSource = Axios.CancelToken.source()
         mutableConfig.cancelToken = cancelTokenSource.token
         request<T>(mutableConfig).then(
                 { value -> cont.resumeWith(Result.success(value)) },

@@ -4,8 +4,7 @@ package org.araqnid.libraryversions.js.axios
 external object Axios : AxiosClient {
     fun isCancel(thrown: Throwable): Boolean
 
-    @JsName("CancelToken")
-    object cancelToken { // CancelTokenStatic
+    object CancelToken { // CancelTokenStatic
         fun source(): CancelTokenSource
     }
 
