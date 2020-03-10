@@ -136,7 +136,7 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
     }
 }
 
-fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<String> {
+fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuffer> {
     return flow {
         val decoder = charset.newDecoder()
         collect { input ->
@@ -144,12 +144,12 @@ fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<String>
             val result = decoder.decode(input, output, false)
             if (result.isError)
                 error("invalid text: $result")
-            emit(String(output.array(), 0, output.position()))
+            emit(output)
         }
     }
 }
 
-fun Flow<String>.splitByLines(): Flow<String> {
+fun Flow<CharSequence>.splitByLines(): Flow<String> {
     return flow {
         var residualPrefix = ""
         collect { text ->
