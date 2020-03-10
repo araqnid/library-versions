@@ -30,6 +30,12 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
 
     @OptIn(FlowPreview::class)
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        val pathInfo = req.pathInfo
+        if (pathInfo != null) {
+            resp.sendError(404)
+            return
+        }
+
         respondAsynchronouslyOrShowError(req, resp, CoroutineName("IndexServlet")) {
             resp.contentType = "text/plain"
 
