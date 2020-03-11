@@ -1,6 +1,10 @@
 package org.araqnid.libraryversions.js
 
 import kotlinext.js.js
+import org.araqnid.libraryversions.js.assertions.assertThat
+import org.araqnid.libraryversions.js.assertions.equalTo
+import org.araqnid.libraryversions.js.assertions.isAbsent
+import org.araqnid.libraryversions.js.assertions.isEqualTo
 import org.araqnid.libraryversions.js.axios.Dictionary
 import org.araqnid.libraryversions.js.axios.DictionaryEntry
 import org.araqnid.libraryversions.js.axios.asMap
@@ -14,8 +18,6 @@ import org.araqnid.libraryversions.js.axios.keys
 import org.araqnid.libraryversions.js.axios.value
 import org.araqnid.libraryversions.js.axios.values
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class DictionaryTest {
     @Test
@@ -24,9 +26,9 @@ class DictionaryTest {
             this.foo = 1
             this.bar = 2
         }.unsafeCast<Dictionary<Int>>()
-        assertEquals(1, dic["foo"])
-        assertEquals(2, dic["bar"])
-        assertNull(dic["quux"])
+        assertThat(dic["foo"], isEqualTo(1))
+        assertThat(dic["bar"], isEqualTo(2))
+        assertThat(dic["quux"], isAbsent)
     }
 
     @Test
@@ -36,7 +38,7 @@ class DictionaryTest {
             this.bar = 2
         }.unsafeCast<Dictionary<Int>>()
         val keys: Array<String> = dic.keys
-        assertEquals(setOf("foo", "bar"), keys.toSet())
+        assertThat(keys.toSet(), equalTo(setOf("foo", "bar")))
     }
 
     @Test
@@ -46,7 +48,7 @@ class DictionaryTest {
             this.bar = 2
         }.unsafeCast<Dictionary<Int>>()
         val values: Array<Int> = dic.values
-        assertEquals(setOf(1, 2), values.toSet())
+        assertThat(values.toSet(), equalTo(setOf(1, 2)))
     }
 
     @Test
@@ -55,14 +57,16 @@ class DictionaryTest {
             this.foo = 1
             this.bar = 2
         }.unsafeCast<Dictionary<Int>>()
+
         val entries: Array<DictionaryEntry<Int>> = dic.entries
-        assertEquals("foo", entries[0].key)
-        assertEquals(1, entries[0].value)
+        assertThat(entries[0].key, equalTo("foo"))
+        assertThat(entries[0].value, equalTo(1))
+        assertThat(entries[1].key, equalTo("bar"))
+        assertThat(entries[1].value, equalTo(2))
+
         val (key1, value1) = entries[0]
-        assertEquals("foo", key1)
-        assertEquals(1, value1)
-        assertEquals("bar", entries[1].key)
-        assertEquals(2, entries[1].value)
+        assertThat(key1, equalTo("foo"))
+        assertThat(value1, equalTo(1))
     }
 
     @Test
@@ -71,19 +75,20 @@ class DictionaryTest {
             this.foo = 1
             this.bar = 2
         }.unsafeCast<Dictionary<Int>>()
+
         val map = dic.asMap()
-        assertEquals(mapOf("foo" to 1, "bar" to 2), map)
-        assertEquals(setOf("foo", "bar"), map.keys)
-        assertEquals(setOf(1, 2), map.values.toSet())
-        assertEquals(setOf("foo" to 1, "bar" to 2), map.entries.map { (key, value) -> key to value }.toSet())
-        assertEquals(1, map["foo"])
-        assertEquals(2, map["bar"])
-        assertNull(map["quux"])
+        assertThat(map, equalTo(mapOf("foo" to 1, "bar" to 2)))
+        assertThat(map.keys, equalTo(setOf("foo", "bar")))
+        assertThat(map.values.toSet(), equalTo(setOf(1, 2)))
+        assertThat(map.entries.map { (key, value) -> key to value }.toSet(), equalTo(setOf("foo" to 1, "bar" to 2)))
+        assertThat(map["foo"], isEqualTo(1))
+        assertThat(map["bar"], isEqualTo(2))
+        assertThat(map["quux"], isAbsent)
     }
 
     @Test
     fun dictionary_creator_function() {
         val dic = dictionaryOf("foo" to 1, "bar" to 2)
-        assertEquals("""{"foo":1,"bar":2}""", JSON.stringify(dic))
+        assertThat(JSON.stringify(dic), equalTo("""{"foo":1,"bar":2}"""))
     }
 }
