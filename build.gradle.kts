@@ -1,3 +1,9 @@
+buildscript {
+    dependencies {
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.14.2")
+    }
+}
+
 plugins {
     kotlin("jvm") version "1.3.70"
     application
@@ -47,6 +53,7 @@ dependencies {
     implementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.14.2")
     implementation("com.google.guava:guava:${LibraryVersions.guava}")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
@@ -61,4 +68,10 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
     runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
     testRuntimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+}
+
+pluginManager.apply("kotlinx-atomicfu")
+
+the<kotlinx.atomicfu.plugin.gradle.AtomicFUPluginExtension>().apply {
+    variant = "VH"
 }

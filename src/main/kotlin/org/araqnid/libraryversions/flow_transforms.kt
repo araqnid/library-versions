@@ -1,12 +1,12 @@
 package org.araqnid.libraryversions
 
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.Charset
-import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.Inflater
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
@@ -18,7 +18,7 @@ import kotlin.coroutines.suspendCoroutine
 @OptIn(ExperimentalUnsignedTypes::class)
 private class GzipHeaderReader {
     private var currentBuffer: ByteBuffer? = null
-    private val suspended = AtomicReference<Continuation<Unit>?>()
+    private val suspended = atomic<Continuation<Unit>?>(null)
 
     fun addInput(buffer: ByteBuffer) {
         check(currentBuffer == null) { "currentBuffer was already set" }
@@ -62,7 +62,7 @@ private class GzipHeaderReader {
             currentBuffer = null
 
             suspendCoroutine<Unit> { cont ->
-                suspended.set(cont)
+                suspended.value = cont
             }
         }
     }
