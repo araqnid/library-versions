@@ -2,6 +2,8 @@ package org.araqnid.libraryversions
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.has
+import com.natpryce.hamkrest.present
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
@@ -39,6 +41,24 @@ class GunzipTest {
         }
 
         assertThat(String(gunzippedBytes), equalTo("This is some test content."))
+    }
+
+    @Test
+    fun `detect truncated input`() {
+        val gzippedContent = gzip("This is some test content.").sliceArray(0..4)
+
+        val flow = flowOf(ByteBuffer.wrap(gzippedContent))
+
+        val exception = try {
+            runBlocking {
+                flow.gunzip().toByteArray()
+            }
+            null
+        } catch (e : Exception) {
+            e
+        }
+
+        assertThat(exception, present(has(Throwable::message, present(equalTo("Truncated GZIP input")))))
     }
 
     private fun gzip(text: String): ByteArray {

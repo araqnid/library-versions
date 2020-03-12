@@ -1,6 +1,7 @@
 package org.araqnid.libraryversions
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
@@ -10,6 +11,7 @@ import java.util.zip.Inflater
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
 
@@ -61,36 +63,44 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
             if (inflaterProduced != trailer.size)
                 error("Length differs in gunzipped content; ourSize=$inflaterProduced theirSize=${trailer.size}")
         }
-        collect { buffer ->
-            if (!headerFinished) {
-                headerReader.addInput(buffer)
-                headerError?.let { throw it }
-                if (!headerFinished)
-                    return@collect
-            }
-            if (inflaterResidual == null) {
-                inflaterReader.addInput(buffer)
-                while (true) {
-                    val inflaterOutput = inflaterReader.pollOutput() ?: break
-                    inflaterProduced += inflaterOutput.limit()
-                    emit(inflaterOutput)
+        try {
+            collect { buffer ->
+                if (!headerFinished) {
+                    headerReader.addInput(buffer)
+                    headerError?.let { throw it }
+                    if (!headerFinished)
+                        return@collect
                 }
-                inflaterError?.let { throw it }
                 if (inflaterResidual == null) {
+                    inflaterReader.addInput(buffer)
+                    while (true) {
+                        val inflaterOutput = inflaterReader.pollOutput() ?: break
+                        inflaterProduced += inflaterOutput.limit()
+                        emit(inflaterOutput)
+                    }
+                    inflaterError?.let { throw it }
+                    if (inflaterResidual == null) {
+                        return@collect
+                    }
+                    trailerReader.addInput(inflaterResidual!!)
+                    trailerError?.let { throw it }
+                    trailerProduced?.let { trailer ->
+                        checkTrailer(trailer)
+                    }
                     return@collect
                 }
-                trailerReader.addInput(inflaterResidual!!)
+                trailerReader.addInput(buffer)
                 trailerError?.let { throw it }
                 trailerProduced?.let { trailer ->
                     checkTrailer(trailer)
                 }
-                return@collect
             }
-            trailerReader.addInput(buffer)
-            trailerError?.let { throw it }
-            trailerProduced?.let { trailer ->
-                checkTrailer(trailer)
-            }
+            if (trailerProduced == null)
+                error("Truncated GZIP input")
+        } finally {
+            headerReader.close()
+            inflaterReader.close()
+            trailerReader.close()
         }
     }
 }
@@ -178,6 +188,7 @@ private class GzipInflaterReader : BufferParser<ByteBuffer>() {
                 }
             }
         } finally {
+            println("calling inflater.end()")
             inflater.end()
         }
     }
@@ -187,6 +198,11 @@ private class GzipInflaterReader : BufferParser<ByteBuffer>() {
             if (!emitting.compareAndSet(null, buffer to cont))
                 error("was already emitting when emit() was called")
         }
+    }
+
+    override fun close() {
+        super.close()
+        emitting.getAndSet(null)?.second?.resumeWithException(CancellationException())
     }
 }
 
@@ -235,7 +251,7 @@ private abstract class BufferBytesParser<T> : BufferParser<T>() {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private abstract class BufferParser<T> {
+private abstract class BufferParser<T> : AutoCloseable {
     private val currentBuffer = atomic<ByteBuffer?>(null)
     private val suspended = atomic<Continuation<Unit>?>(null)
 
@@ -257,5 +273,9 @@ private abstract class BufferParser<T> {
                     error("was already suspended when nextBuffer() was called")
             }
         }
+    }
+
+    override fun close() {
+        suspended.getAndSet(null)?.resumeWithException(CancellationException())
     }
 }
