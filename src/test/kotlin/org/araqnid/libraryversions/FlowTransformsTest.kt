@@ -1,7 +1,10 @@
 package org.araqnid.libraryversions
 
 import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.contains
 import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.has
+import com.natpryce.hamkrest.present
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
@@ -23,6 +26,26 @@ class FlowTransformsTest {
             stringBuilder.toString()
         }
         assertThat(outputText, equalTo(inputText))
+    }
+
+    @Test
+    fun detects_trailing_truncated_character() {
+        val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
+        val byteBuffers = inputText.toByteArray().splitIntoChunks().let { input ->
+            sequence<ByteArray> {
+                yieldAll(input)
+                yield(byteArrayOf(0xc2.toByte())) // 0xc2 0xa3 would be a "£" character in UTF-8 (U+00A3)
+            }
+        }.map { ByteBuffer.wrap(it)!! }.asFlow()
+        val exception = try {
+            runBlocking {
+                byteBuffers.decodeText().collect()
+            }
+            null
+        } catch (e: IllegalStateException) {
+            e
+        }
+        assertThat(exception, present(has(Throwable::message, present(contains(Regex("invalid text: MALFORMED"))))))
     }
 
     @Test

@@ -32,6 +32,29 @@ fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuf
                 output.clear()
             }
         }
+        val output = CharBuffer.allocate(2048)
+        val finalInput = residual ?: ByteBuffer.allocate(0)!!
+        while (true) {
+            val result = decoder.decode(finalInput, output, true)
+            if (result.isError)
+                error("invalid text: $result")
+            output.flip()
+            if (output.limit() > 0)
+                emit(output)
+            if (result.isUnderflow)
+                break
+        }
+        output.clear()
+        while (true) {
+            val result = decoder.flush(output)
+            if (result.isError)
+                error("failed to flush decoder: $result")
+            output.flip()
+            if (output.limit() > 0)
+                emit(output)
+            if (result.isUnderflow)
+                break
+        }
     }
 }
 
