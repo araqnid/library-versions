@@ -8,7 +8,6 @@ import java.nio.ByteBuffer
 import java.util.zip.CRC32
 import java.util.zip.Inflater
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.startCoroutine
@@ -17,58 +16,94 @@ import kotlin.coroutines.suspendCoroutine
 fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
     return flow {
         val headerReader = GzipHeaderReader()
-        var finishedHeader = false
-        var headerParseError: Throwable? = null
+        var headerFinished = false
+        var headerError: Throwable? = null
         headerReader::read.startCoroutine(object : Continuation<Unit> {
-            override val context: CoroutineContext
-                get() = EmptyCoroutineContext
+            override val context = EmptyCoroutineContext
 
             override fun resumeWith(result: Result<Unit>) {
-                if (result.isSuccess)
-                    finishedHeader = true
-                else {
-                    headerParseError = result.exceptionOrNull()
-                }
+                result.fold(
+                        onSuccess = { headerFinished = true },
+                        onFailure = { headerError = it }
+                )
             }
         })
-        val inflater = Inflater(true)
-        try {
-            collect { buffer ->
-                if (!finishedHeader) {
-                    headerReader.addInput(buffer)
-                    headerParseError?.let { throw it }
-                    if (!finishedHeader)
-                        return@collect
-                }
-                inflater.setInput(buffer)
-                produce@
-                while (true) {
-                    val output = ByteBuffer.allocate(2048)
-                    val bytesProduced = inflater.inflate(output)
-                    if (bytesProduced != 0) {
-                        output.flip()
-                        emit(output)
-                    }
-                    else {
-                        break@produce
-                    }
-                }
+        val inflaterReader = GzipInflaterReader()
+        var inflaterResidual: ByteBuffer? = null
+        var inflaterError: Throwable? = null
+        var inflaterProduced: Int = 0
+        inflaterReader::read.startCoroutine(object : Continuation<ByteBuffer> {
+            override val context = EmptyCoroutineContext
+
+            override fun resumeWith(result: Result<ByteBuffer>) {
+                result.fold(
+                        onSuccess = { inflaterResidual = it },
+                        onFailure = { inflaterError = it }
+                )
             }
-        } finally {
-            inflater.end()
+        })
+        val trailerReader = GzipTrailerReader()
+        var trailerProduced: GzipTrailerReader.GzipTrailer? = null
+        var trailerError: Throwable? = null
+        trailerReader::read.startCoroutine(object : Continuation<GzipTrailerReader.GzipTrailer> {
+            override val context = EmptyCoroutineContext
+
+            override fun resumeWith(result: Result<GzipTrailerReader.GzipTrailer>) {
+                result.fold(
+                        onSuccess = { trailerProduced = it },
+                        onFailure = { trailerError = it }
+                )
+            }
+        })
+        fun checkTrailer(trailer: GzipTrailerReader.GzipTrailer) {
+            if (inflaterReader.crc.value != trailer.theirCrc)
+                error("CRC error in gunzipped content; ourCrc=0x${inflaterReader.crc.value.toString(radix=16)} theirCrc=${trailer.theirCrc.toString(radix=16)}")
+            if (inflaterProduced != trailer.size)
+                error("Length differs in gunzipped content; ourSize=$inflaterProduced theirSize=${trailer.size}")
+        }
+        collect { buffer ->
+            if (!headerFinished) {
+                headerReader.addInput(buffer)
+                headerError?.let { throw it }
+                if (!headerFinished)
+                    return@collect
+            }
+            if (inflaterResidual == null) {
+                inflaterReader.addInput(buffer)
+                while (true) {
+                    val inflaterOutput = inflaterReader.pollOutput() ?: break
+                    inflaterProduced += inflaterOutput.limit()
+                    emit(inflaterOutput)
+                }
+                inflaterError?.let { throw it }
+                if (inflaterResidual == null) {
+                    return@collect
+                }
+                trailerReader.addInput(inflaterResidual!!)
+                trailerError?.let { throw it }
+                trailerProduced?.let { trailer ->
+                    checkTrailer(trailer)
+                }
+                return@collect
+            }
+            trailerReader.addInput(buffer)
+            trailerError?.let { throw it }
+            trailerProduced?.let { trailer ->
+                checkTrailer(trailer)
+            }
         }
     }
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private class GzipHeaderReader {
-    private var currentBuffer: ByteBuffer? = null
+    private val currentBuffer = atomic<ByteBuffer?>(null)
     private val suspended = atomic<Continuation<Unit>?>(null)
     private val crc = CRC32()
 
     fun addInput(buffer: ByteBuffer) {
-        check(currentBuffer == null) { "currentBuffer was already set" }
-        currentBuffer = buffer
+        if (!currentBuffer.compareAndSet(null, buffer))
+            error("currentBuffer was already set")
         suspended.getAndSet(null)?.resume(Unit)
     }
 
@@ -102,11 +137,11 @@ private class GzipHeaderReader {
 
     private suspend fun readUByte(): UByte {
         while (true) {
-            currentBuffer?.let { buf ->
+            currentBuffer.value?.let { buf ->
                 if (buf.remaining() > 0)
                     return buf.get().toUByte()
             }
-            currentBuffer = null
+            currentBuffer.value = null
 
             suspendCoroutine<Unit> { cont ->
                 suspended.value = cont
@@ -134,5 +169,130 @@ private class GzipHeaderReader {
         private const val FEXTRA = 4 // Extra field
         private const val FNAME = 8 // File name
         private const val FCOMMENT = 16 // File comment
+    }
+}
+
+private class GzipInflaterReader {
+    val crc = CRC32()
+    private val currentBuffer = atomic<ByteBuffer?>(null)
+    private val suspended = atomic<Continuation<Unit>?>(null)
+    private val emitting = atomic<Pair<ByteBuffer, Continuation<Unit>>?>(null)
+
+    fun addInput(buffer: ByteBuffer) {
+        if (!currentBuffer.compareAndSet(null, buffer))
+            error("currentBuffer was already set")
+        suspended.getAndSet(null)?.resume(Unit)
+    }
+
+    fun pollOutput(): ByteBuffer? {
+        val ready = emitting.getAndSet(null) ?: return null
+        ready.second.resume(Unit)
+        return ready.first
+    }
+
+    suspend fun read(): ByteBuffer {
+        val inflater = Inflater(true)
+        try {
+            while (true) {
+                val buffer = nextBuffer()
+                inflater.setInput(buffer)
+                produce@
+                while (true) {
+                    val output = ByteBuffer.allocate(2048)
+                    val bytesProduced = inflater.inflate(output)
+                    if (bytesProduced != 0) {
+                        output.flip()
+                        crc.update(output.asReadOnlyBuffer())
+                        emit(output)
+                    }
+                    else if (inflater.finished()) {
+                        return buffer
+                    }
+                    else if (inflater.needsDictionary()) {
+                        throw UnsupportedOperationException("inflater needs dictionary -- not implemented")
+                    }
+                    else if (inflater.needsInput()) {
+                        break@produce
+                    }
+                    else {
+                        error("inflater did not produce output, has not finished but does not need input - ???")
+                    }
+                }
+            }
+        } finally {
+            inflater.end()
+        }
+    }
+
+    private suspend fun emit(buffer: ByteBuffer) {
+        suspendCoroutine<Unit> { cont ->
+            if (!emitting.compareAndSet(null, buffer to cont))
+                error("was already emitting when emit() was called")
+        }
+    }
+
+    private suspend fun nextBuffer(): ByteBuffer {
+        while (true) {
+            val alreadyGot = currentBuffer.getAndSet(null)
+            if (alreadyGot != null)
+                return alreadyGot
+            suspendCoroutine<Unit> { cont ->
+                if (!suspended.compareAndSet(null, cont))
+                    error("was already suspended when nextBuffer() was called")
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private class GzipTrailerReader {
+    data class GzipTrailer(val theirCrc: Long, val size: Int)
+
+    private val currentBuffer = atomic<ByteBuffer?>(null)
+    private val suspended = atomic<Continuation<Unit>?>(null)
+
+    fun addInput(buffer: ByteBuffer) {
+        if (!currentBuffer.compareAndSet(null, buffer))
+            error("currentBuffer was already set")
+        suspended.getAndSet(null)?.resume(Unit)
+    }
+
+    suspend fun read(): GzipTrailer {
+        val theirCrc = readUInt()
+        val size = readUInt()
+        return GzipTrailer(theirCrc.toLong(), size.toInt())
+    }
+
+    private suspend fun readUByte(): UByte {
+        while (true) {
+            currentBuffer.value?.let { buf ->
+                if (buf.remaining() > 0)
+                    return buf.get().toUByte()
+            }
+            currentBuffer.value = null
+
+            suspendCoroutine<Unit> { cont ->
+                suspended.value = cont
+            }
+        }
+    }
+
+    private suspend fun readUShort(): UShort {
+        val lo = readUByte()
+        val hi = readUByte()
+        return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
+    }
+
+    private suspend fun readUInt(): UInt {
+        val lo = readUShort()
+        val hi = readUShort()
+        return lo.toUInt() or (hi.toULong() shl 16).toUInt()
+    }
+
+    private suspend fun skipBytes(n: Int) {
+        for (i in 1..n) {
+            readUByte()
+        }
     }
 }
