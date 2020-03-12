@@ -1,10 +1,12 @@
 package org.araqnid.libraryversions
 
 import com.google.common.base.Throwables
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -22,6 +24,7 @@ object Main {
 
             versionResolvers.map { resolver ->
                         resolver.findVersions(httpClient)
+                                .flowOn(Dispatchers.Default)
                                 .map { version -> resolver to version }
                                 .catch { ex ->
                                     println("- $resolver")
