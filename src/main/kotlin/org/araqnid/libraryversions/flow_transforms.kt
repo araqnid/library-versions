@@ -28,7 +28,7 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
             var pos = 0
             var nextMatch: Int = text.indexOf(separator, startIndex = pos)
             while (nextMatch >= 0) {
-                emit(residualPrefix + text.substring(pos, nextMatch))
+                emit(text.substring(pos, nextMatch).let { if (residualPrefix.isNotEmpty()) residualPrefix + it else it })
                 pos = nextMatch + separator.length
                 residualPrefix = ""
                 nextMatch = text.indexOf(separator, startIndex = pos)
