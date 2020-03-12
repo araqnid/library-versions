@@ -21,19 +21,21 @@ fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuf
     }
 }
 
-fun Flow<CharSequence>.splitByLines(): Flow<String> {
+fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
     return flow {
         var residualPrefix = ""
         collect { text ->
             var pos = 0
-            var nextMatch: Int = text.indexOf("\n", startIndex = pos)
+            var nextMatch: Int = text.indexOf(separator, startIndex = pos)
             while (nextMatch >= 0) {
                 emit(residualPrefix + text.substring(pos, nextMatch))
-                pos = nextMatch + 1
+                pos = nextMatch + separator.length
                 residualPrefix = ""
-                nextMatch = text.indexOf("\n", startIndex = pos)
+                nextMatch = text.indexOf(separator, startIndex = pos)
             }
             residualPrefix += text.substring(pos)
         }
+        if (residualPrefix.isNotEmpty())
+            emit(residualPrefix)
     }
 }
