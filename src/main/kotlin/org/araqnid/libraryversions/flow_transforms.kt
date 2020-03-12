@@ -33,7 +33,7 @@ fun Flow<CharSequence>.splitByLines(): Flow<String> {
                 residualPrefix = ""
                 nextMatch = text.indexOf("\n", startIndex = pos)
             }
-            residualPrefix = text.substring(pos)
+            residualPrefix += text.substring(pos)
         }
     }
 }

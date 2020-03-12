@@ -27,11 +27,11 @@ class FlowTransformsTest {
 
     @Test
     fun marshals_character_sequences_into_lines() {
-        val charSequences = flowOf("line:", " 1\nline: 2\n", "line: 3\n")
+        val charSequences = flowOf("line:", " 1\nline: 2\n", "line: 3\n", "li", "ne: ", "4\n")
         val lines = runBlocking {
             charSequences.splitByLines().toList()
         }
-        assertThat(lines, equalTo(listOf("line: 1", "line: 2", "line: 3")))
+        assertThat(lines, equalTo(listOf("line: 1", "line: 2", "line: 3", "line: 4")))
     }
 
     private fun String.splitIntoChunks(chunkLength: Int = 10) = object : Sequence<String> {
