@@ -23,9 +23,9 @@ fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuf
 
 fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
     return flow {
-        var residualPrefix = ""
+        var residualPrefix: String? = null
         collect { text ->
-            var pos = residualPrefix.takeIf { it.isNotEmpty() }?.let { prefix ->
+            var pos = residualPrefix?.let { prefix ->
                 val firstMatch = text.indexOf(separator)
                 if (firstMatch < 0) {
                     residualPrefix += text
@@ -44,10 +44,9 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
                 emit(text.substring(pos, nextMatch))
                 pos = nextMatch + separator.length
             }
-            residualPrefix = text.substring(pos)
+            residualPrefix = if (pos == text.length) null else text.substring(pos)
         }
-        if (residualPrefix.isNotEmpty())
-            emit(residualPrefix)
+        residualPrefix?.let { emit(it) }
     }
 }
 
