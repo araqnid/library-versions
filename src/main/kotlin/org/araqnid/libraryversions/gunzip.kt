@@ -96,18 +96,10 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class GzipHeaderReader {
-    private val currentBuffer = atomic<ByteBuffer?>(null)
-    private val suspended = atomic<Continuation<Unit>?>(null)
+private class GzipHeaderReader : BufferParser<Unit>() {
     private val crc = CRC32()
 
-    fun addInput(buffer: ByteBuffer) {
-        if (!currentBuffer.compareAndSet(null, buffer))
-            error("currentBuffer was already set")
-        suspended.getAndSet(null)?.resume(Unit)
-    }
-
-    suspend fun read() {
+    override suspend fun read() {
         if (readUShort() != GZIP_MAGIC.toUShort()) error("Not in GZIP format")
         if (readUByte() != 8.toUByte()) error("Unsupported compression method")
         val flags = readUByte()
@@ -135,32 +127,6 @@ private class GzipHeaderReader {
         }
     }
 
-    private suspend fun readUByte(): UByte {
-        while (true) {
-            currentBuffer.value?.let { buf ->
-                if (buf.remaining() > 0)
-                    return buf.get().toUByte()
-            }
-            currentBuffer.value = null
-
-            suspendCoroutine<Unit> { cont ->
-                suspended.value = cont
-            }
-        }
-    }
-
-    private suspend fun readUShort(): UShort {
-        val lo = readUByte()
-        val hi = readUByte()
-        return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
-    }
-
-    private suspend fun skipBytes(n: Int) {
-        for (i in 1..n) {
-            readUByte()
-        }
-    }
-
     companion object {
         private const val GZIP_MAGIC: Int = 0x8b1f
 
@@ -172,17 +138,9 @@ private class GzipHeaderReader {
     }
 }
 
-private class GzipInflaterReader {
+private class GzipInflaterReader : BufferParser<ByteBuffer>() {
     val crc = CRC32()
-    private val currentBuffer = atomic<ByteBuffer?>(null)
-    private val suspended = atomic<Continuation<Unit>?>(null)
     private val emitting = atomic<Pair<ByteBuffer, Continuation<Unit>>?>(null)
-
-    fun addInput(buffer: ByteBuffer) {
-        if (!currentBuffer.compareAndSet(null, buffer))
-            error("currentBuffer was already set")
-        suspended.getAndSet(null)?.resume(Unit)
-    }
 
     fun pollOutput(): ByteBuffer? {
         val ready = emitting.getAndSet(null) ?: return null
@@ -190,7 +148,7 @@ private class GzipInflaterReader {
         return ready.first
     }
 
-    suspend fun read(): ByteBuffer {
+    override suspend fun read(): ByteBuffer {
         val inflater = Inflater(true)
         try {
             while (true) {
@@ -230,8 +188,33 @@ private class GzipInflaterReader {
                 error("was already emitting when emit() was called")
         }
     }
+}
 
-    private suspend fun nextBuffer(): ByteBuffer {
+@OptIn(ExperimentalUnsignedTypes::class)
+private class GzipTrailerReader : BufferParser<GzipTrailerReader.GzipTrailer>() {
+    data class GzipTrailer(val theirCrc: Long, val size: Int)
+
+    override suspend fun read(): GzipTrailer {
+        val theirCrc = readUInt()
+        val size = readUInt()
+        return GzipTrailer(theirCrc.toLong(), size.toInt())
+    }
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private abstract class BufferParser<T> {
+    private val currentBuffer = atomic<ByteBuffer?>(null)
+    private val suspended = atomic<Continuation<Unit>?>(null)
+
+    fun addInput(buffer: ByteBuffer) {
+        if (!currentBuffer.compareAndSet(null, buffer))
+            error("currentBuffer was already set")
+        suspended.getAndSet(null)?.resume(Unit)
+    }
+
+    abstract suspend fun read(): T
+
+    protected suspend fun nextBuffer(): ByteBuffer {
         while (true) {
             val alreadyGot = currentBuffer.getAndSet(null)
             if (alreadyGot != null)
@@ -242,29 +225,8 @@ private class GzipInflaterReader {
             }
         }
     }
-}
 
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private class GzipTrailerReader {
-    data class GzipTrailer(val theirCrc: Long, val size: Int)
-
-    private val currentBuffer = atomic<ByteBuffer?>(null)
-    private val suspended = atomic<Continuation<Unit>?>(null)
-
-    fun addInput(buffer: ByteBuffer) {
-        if (!currentBuffer.compareAndSet(null, buffer))
-            error("currentBuffer was already set")
-        suspended.getAndSet(null)?.resume(Unit)
-    }
-
-    suspend fun read(): GzipTrailer {
-        val theirCrc = readUInt()
-        val size = readUInt()
-        return GzipTrailer(theirCrc.toLong(), size.toInt())
-    }
-
-    private suspend fun readUByte(): UByte {
+    protected suspend fun readUByte(): UByte {
         while (true) {
             currentBuffer.value?.let { buf ->
                 if (buf.remaining() > 0)
@@ -273,24 +235,25 @@ private class GzipTrailerReader {
             currentBuffer.value = null
 
             suspendCoroutine<Unit> { cont ->
-                suspended.value = cont
+                if (!suspended.compareAndSet(null, cont))
+                    error("was already suspended when readUByte() was called")
             }
         }
     }
 
-    private suspend fun readUShort(): UShort {
+    protected suspend fun readUShort(): UShort {
         val lo = readUByte()
         val hi = readUByte()
         return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
     }
 
-    private suspend fun readUInt(): UInt {
+    protected suspend fun readUInt(): UInt {
         val lo = readUShort()
         val hi = readUShort()
         return lo.toUInt() or (hi.toULong() shl 16).toUInt()
     }
 
-    private suspend fun skipBytes(n: Int) {
+    protected suspend fun skipBytes(n: Int) {
         for (i in 1..n) {
             readUByte()
         }
