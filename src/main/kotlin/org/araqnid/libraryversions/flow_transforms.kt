@@ -25,16 +25,15 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
     return flow {
         var residualPrefix = ""
         collect { text ->
-            var pos = 0
-            residualPrefix.takeIf { it.isNotEmpty() }?.let { prefix ->
+            var pos = residualPrefix.takeIf { it.isNotEmpty() }?.let { prefix ->
                 val firstMatch = text.indexOf(separator)
                 if (firstMatch < 0) {
                     residualPrefix += text
                     return@collect
                 }
                 emit(text.extractSubstringWithPrefix(prefix, 0, firstMatch))
-                pos = firstMatch + separator.length
-            }
+                firstMatch + separator.length
+            } ?: 0
             while (true) {
                 val nextMatch = text.indexOf(separator, startIndex = pos)
                 if (nextMatch < 0)
