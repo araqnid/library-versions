@@ -10,13 +10,27 @@ import java.nio.charset.Charset
 fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuffer> {
     return flow {
         val decoder = charset.newDecoder()
+        var residual: ByteBuffer? = null
         collect { input ->
-            val output = CharBuffer.allocate(8192)
-            val result = decoder.decode(input, output, false)
-            if (result.isError)
-                error("invalid text: $result")
-            output.flip()
-            emit(output)
+            val output = CharBuffer.allocate(2048)
+            val inputWithResidual = residual?.let { prefixBuffer ->
+                ByteBuffer.allocate(prefixBuffer.remaining() + input.limit())!!
+                        .put(prefixBuffer)
+                        .put(input)
+                        .rewind()
+            } ?: input
+            while (true) {
+                val result = decoder.decode(inputWithResidual, output, false)
+                if (result.isError)
+                    error("invalid text: $result")
+                output.flip()
+                emit(output)
+                if (result.isUnderflow) {
+                    residual = if (inputWithResidual.remaining() > 0) inputWithResidual else null
+                    break
+                }
+                output.clear()
+            }
         }
     }
 }

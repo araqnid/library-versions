@@ -14,7 +14,7 @@ class FlowTransformsTest {
     @Test
     fun decodes_binary_data_as_text() {
         val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
-        val byteBuffers = inputText.splitIntoChunks().map { ByteBuffer.wrap(it.toByteArray())!! }.asFlow()
+        val byteBuffers = inputText.toByteArray().splitIntoChunks().map { ByteBuffer.wrap(it)!! }.asFlow()
         val outputText = runBlocking {
             val stringBuilder = StringBuilder()
             byteBuffers.decodeText().collect { chars: CharSequence ->
@@ -52,14 +52,14 @@ class FlowTransformsTest {
         assertThat(lines, equalTo(listOf("line: 1", "line: 2", "line: 3", "line: 4")))
     }
 
-    private fun String.splitIntoChunks(chunkLength: Int = 10) = object : Sequence<String> {
-        override fun iterator() = object: Iterator<String> {
+    private fun ByteArray.splitIntoChunks(chunkLength: Int = 10) = Sequence {
+        object : Iterator<ByteArray> {
             private var pos = 0
 
-            override fun hasNext(): Boolean = pos < length
+            override fun hasNext(): Boolean = pos < size
 
-            override fun next(): String {
-                val chunk = if ((pos + chunkLength) > length) substring(pos) else substring(pos, pos + chunkLength)
+            override fun next(): ByteArray {
+                val chunk = if ((pos + chunkLength) > size) sliceArray(pos until size) else sliceArray(pos until pos + chunkLength)
                 pos += chunkLength
                 return chunk
             }
