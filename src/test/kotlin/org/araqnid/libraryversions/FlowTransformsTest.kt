@@ -2,65 +2,49 @@ package org.araqnid.libraryversions
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.zip.GZIPOutputStream
 
 class FlowTransformsTest {
     @Test
-    fun `gunzips single byte buffer in flow`() {
-        val gzippedContent = gzip("This is some test content.")
-
-        val flow = flowOf(ByteBuffer.wrap(gzippedContent))
-
-        val gunzippedBytes = runBlocking {
-            flow.gunzip().toByteArray()
+    fun decodes_binary_data_as_text() {
+        val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
+        val byteBuffers = inputText.splitIntoChunks().map { ByteBuffer.wrap(it.toByteArray())!! }.asFlow()
+        val outputText = runBlocking {
+            val stringBuilder = StringBuilder()
+            byteBuffers.decodeText().collect { chars: CharSequence ->
+                stringBuilder.append(chars)
+            }
+            stringBuilder.toString()
         }
-
-        assertThat(String(gunzippedBytes), equalTo("This is some test content."))
+        assertThat(outputText, equalTo(inputText))
     }
 
     @Test
-    fun `gunzips multiple byte buffers in flow`() {
-        val gzippedContent = gzip("This is some test content.")
-
-        val flow = flowOf(
-                ByteBuffer.wrap(gzippedContent, 0, 16),
-                ByteBuffer.wrap(gzippedContent, 16, gzippedContent.size - 16)
-        )
-
-        val gunzippedBytes = runBlocking {
-            flow.gunzip().toByteArray()
+    fun marshals_character_sequences_into_lines() {
+        val charSequences = flowOf("line:", " 1\nline: 2\n", "line: 3\n")
+        val lines = runBlocking {
+            charSequences.splitByLines().toList()
         }
-
-        assertThat(String(gunzippedBytes), equalTo("This is some test content."))
+        assertThat(lines, equalTo(listOf("line: 1", "line: 2", "line: 3")))
     }
 
-    private fun gzip(text: String): ByteArray {
-        val baos = ByteArrayOutputStream()
-        GZIPOutputStream(baos).writer().use { writer ->
-            writer.write(text)
-        }
-        return baos.toByteArray()
-    }
+    private fun String.splitIntoChunks(chunkLength: Int = 10) = object : Sequence<String> {
+        override fun iterator() = object: Iterator<String> {
+            private var pos = 0
 
-    private suspend fun Flow<ByteBuffer>.toByteArray(): ByteArray {
-        val outputBuffers = mutableListOf<ByteBuffer>()
-        collect { outputBuffer ->
-            outputBuffers += outputBuffer
+            override fun hasNext(): Boolean = pos < length
+
+            override fun next(): String {
+                val chunk = if ((pos + chunkLength) > length) substring(pos) else substring(pos, pos + chunkLength)
+                pos += chunkLength
+                return chunk
+            }
         }
-        val totalSize = outputBuffers.sumBy { it.limit() }
-        val bytes = ByteArray(totalSize)
-        var offset = 0
-        for (buf in outputBuffers) {
-            buf.array().copyInto(bytes, offset, 0, buf.limit())
-            offset += buf.limit()
-        }
-        return bytes
     }
 }
