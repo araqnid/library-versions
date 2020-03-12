@@ -28,7 +28,7 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
             var pos = 0
             var nextMatch: Int = text.indexOf(separator, startIndex = pos)
             while (nextMatch >= 0) {
-                emit(text.substring(pos, nextMatch).let { if (residualPrefix.isNotEmpty()) residualPrefix + it else it })
+                emit(text.extractSubstringWithPrefix(residualPrefix, pos, nextMatch))
                 pos = nextMatch + separator.length
                 residualPrefix = ""
                 nextMatch = text.indexOf(separator, startIndex = pos)
@@ -37,5 +37,13 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
         }
         if (residualPrefix.isNotEmpty())
             emit(residualPrefix)
+    }
+}
+
+private fun CharSequence.extractSubstringWithPrefix(prefix: String, pos: Int, endPos: Int): String {
+    return if (prefix.isEmpty()) substring(pos, endPos)
+    else buildString(capacity = endPos - pos + prefix.length) {
+        append(prefix)
+        append(this@extractSubstringWithPrefix, pos, endPos)
     }
 }
