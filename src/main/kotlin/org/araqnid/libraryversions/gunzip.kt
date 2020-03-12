@@ -96,7 +96,7 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class GzipHeaderReader : BufferParser<Unit>() {
+private class GzipHeaderReader : BufferBytesParser<Unit>() {
     private val crc = CRC32()
 
     override suspend fun read() {
@@ -191,13 +191,46 @@ private class GzipInflaterReader : BufferParser<ByteBuffer>() {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class GzipTrailerReader : BufferParser<GzipTrailerReader.GzipTrailer>() {
+private class GzipTrailerReader : BufferBytesParser<GzipTrailerReader.GzipTrailer>() {
     data class GzipTrailer(val theirCrc: Long, val size: Int)
 
     override suspend fun read(): GzipTrailer {
         val theirCrc = readUInt()
         val size = readUInt()
         return GzipTrailer(theirCrc.toLong(), size.toInt())
+    }
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private abstract class BufferBytesParser<T> : BufferParser<T>() {
+    private var currentBuffer: ByteBuffer? = null
+
+    protected suspend fun readUByte(): UByte {
+        while (true) {
+            currentBuffer?.let { buf ->
+                if (buf.remaining() > 0)
+                    return buf.get().toUByte()
+            }
+            currentBuffer = nextBuffer()
+        }
+    }
+
+    protected suspend fun readUShort(): UShort {
+        val lo = readUByte()
+        val hi = readUByte()
+        return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
+    }
+
+    protected suspend fun readUInt(): UInt {
+        val lo = readUShort()
+        val hi = readUShort()
+        return lo.toUInt() or (hi.toULong() shl 16).toUInt()
+    }
+
+    protected suspend fun skipBytes(n: Int) {
+        for (i in 1..n) {
+            readUByte()
+        }
     }
 }
 
@@ -223,39 +256,6 @@ private abstract class BufferParser<T> {
                 if (!suspended.compareAndSet(null, cont))
                     error("was already suspended when nextBuffer() was called")
             }
-        }
-    }
-
-    protected suspend fun readUByte(): UByte {
-        while (true) {
-            currentBuffer.value?.let { buf ->
-                if (buf.remaining() > 0)
-                    return buf.get().toUByte()
-            }
-            currentBuffer.value = null
-
-            suspendCoroutine<Unit> { cont ->
-                if (!suspended.compareAndSet(null, cont))
-                    error("was already suspended when readUByte() was called")
-            }
-        }
-    }
-
-    protected suspend fun readUShort(): UShort {
-        val lo = readUByte()
-        val hi = readUByte()
-        return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
-    }
-
-    protected suspend fun readUInt(): UInt {
-        val lo = readUShort()
-        val hi = readUShort()
-        return lo.toUInt() or (hi.toULong() shl 16).toUInt()
-    }
-
-    protected suspend fun skipBytes(n: Int) {
-        for (i in 1..n) {
-            readUByte()
         }
     }
 }
