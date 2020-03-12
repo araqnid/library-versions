@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.flow
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.Charset
+import java.util.zip.CRC32
 import java.util.zip.Inflater
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
@@ -19,6 +20,7 @@ import kotlin.coroutines.suspendCoroutine
 private class GzipHeaderReader {
     private var currentBuffer: ByteBuffer? = null
     private val suspended = atomic<Continuation<Unit>?>(null)
+    private val crc = CRC32()
 
     fun addInput(buffer: ByteBuffer) {
         check(currentBuffer == null) { "currentBuffer was already set" }
@@ -48,8 +50,9 @@ private class GzipHeaderReader {
             }
         }
         if ((flags and FHCRC.toUByte()) != 0.toUByte()) {
-            // TODO actually check CRC
-            readUShort()
+            val theirCrc = (crc.value and 0xffff).toUShort()
+            val ourCrc = readUShort()
+            check(theirCrc == ourCrc) { "GZIP header CRC mismatch: ours=0x${ourCrc.toString(radix=16)} theirs=0x${theirCrc.toString(radix = 16)}"}
         }
     }
 
