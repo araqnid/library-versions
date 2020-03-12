@@ -31,7 +31,10 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
                     residualPrefix += text
                     return@collect
                 }
-                emit(text.extractSubstringWithPrefix(prefix, 0, firstMatch))
+                emit(buildString(capacity = firstMatch - 0 + prefix.length) {
+                    append(prefix)
+                    append(text, 0, firstMatch)
+                })
                 firstMatch + separator.length
             } ?: 0
             while (true) {
@@ -48,9 +51,3 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
     }
 }
 
-private fun CharSequence.extractSubstringWithPrefix(prefix: String, pos: Int, endPos: Int): String {
-    return buildString(capacity = endPos - pos + prefix.length) {
-        append(prefix)
-        append(this@extractSubstringWithPrefix, pos, endPos)
-    }
-}
