@@ -41,7 +41,6 @@ fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
                     break
                 emit(text.substring(pos, nextMatch))
                 pos = nextMatch + separator.length
-                residualPrefix = ""
             }
             residualPrefix = text.substring(pos)
         }
