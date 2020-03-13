@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineName;
 import kotlinx.coroutines.CoroutineStart;
 import kotlinx.coroutines.DelayKt;
 import kotlinx.coroutines.GlobalScope;
-import kotlinx.coroutines.Job;
 import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.flow.FlowKt;
 import kotlinx.coroutines.future.FutureKt;
@@ -21,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -48,13 +46,6 @@ public class JavaMain {
     @SuppressWarnings("unchecked")
     public static <T> CompletableFuture<T> callSuspendFunction(CoroutineContext context, Function<? super Continuation<? super T>, ?> call) {
         CompletableFuture<T> future = new CompletableFuture<>();
-
-        Job job = context.get(Job.Key);
-        if (job != null) {
-            future.whenComplete((value, ex) -> {
-                job.cancel(new CancellationException());
-            });
-        }
 
         try {
             Object result = call.apply(new Continuation<>() {
