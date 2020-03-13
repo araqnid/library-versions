@@ -35,7 +35,9 @@ val defaultVersionResolvers = listOf(
         mavenCentral("org.jetbrains.kotlin", "kotlin-stdlib"),
         jcenter("org.jetbrains.kotlinx", "kotlinx-html-assembly"),
         jcenter("com.natpryce", "hamkrest"),
-        GradleResolver
+        GradleResolver,
+        ZuluResolver,
+        NodeJsResolver
 )
 
 expect object ZuluResolver : Resolver
