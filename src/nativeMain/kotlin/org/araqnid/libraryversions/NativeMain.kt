@@ -9,13 +9,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 
-fun main(argv: Array<String>) {
+fun main(args: Array<String>) {
     runBlocking {
         println("Latest Versions")
         println("===============")
         println("")
 
-        setOf(GradleResolver).map { resolver ->
+        loadVersionResolvers(if (args.isNotEmpty()) args[0] else null).map { resolver ->
                     resolver.findVersions(CurlHttpFetcher)
                             .flowOn(Dispatchers.Default)
                             .map { version -> resolver to version }
