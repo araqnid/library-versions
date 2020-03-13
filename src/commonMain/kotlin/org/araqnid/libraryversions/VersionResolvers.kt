@@ -45,23 +45,23 @@ expect object NodeJsResolver : Resolver
 
 suspend fun loadVersionResolvers(configFile: String?): Collection<Resolver> {
     if (configFile == null) return defaultVersionResolvers
-    return readTextFile(configFile).lineSequence().filterNot { it.isBlank() }.map(::configureResolver).toList()
-}
-
-internal expect suspend fun readTextFile(filename: String): String
-
-private fun configureResolver(configLine: String): Resolver {
-    val words = configLine.split(Regex("""\s+"""))
-    return when (words[0]) {
-        "Gradle" -> GradleResolver
-        "NodeJs" -> NodeJsResolver
-        "Zulu" -> ZuluResolver
-        "mavenCentral" -> configureMavenResolver(words.drop(1)) { artifactGroupId, artifactId, filters -> mavenCentral(artifactGroupId, artifactId, *filters.toTypedArray()) }
-        "jcenter" -> configureMavenResolver(words.drop(1))  { artifactGroupId, artifactId, filters -> jcenter(artifactGroupId, artifactId, *filters.toTypedArray()) }
-        "Maven" -> configureMavenResolver(words.drop(2)) { artifactGroupId, artifactId, filters -> MavenResolver(words[1], artifactGroupId, artifactId, filters) }
-        else -> error("Unrecognised resolver type: ${words[0]}")
+    return useLinesOfTextFile(configFile) { lines ->
+        lines.filterNot { it.isBlank() }.map { configLine ->
+            val words = configLine.split(Regex("""\s+"""))
+            when (words[0]) {
+                "Gradle" -> GradleResolver
+                "NodeJs" -> NodeJsResolver
+                "Zulu" -> ZuluResolver
+                "mavenCentral" -> configureMavenResolver(words.drop(1)) { artifactGroupId, artifactId, filters -> mavenCentral(artifactGroupId, artifactId, *filters.toTypedArray()) }
+                "jcenter" -> configureMavenResolver(words.drop(1))  { artifactGroupId, artifactId, filters -> jcenter(artifactGroupId, artifactId, *filters.toTypedArray()) }
+                "Maven" -> configureMavenResolver(words.drop(2)) { artifactGroupId, artifactId, filters -> MavenResolver(words[1], artifactGroupId, artifactId, filters) }
+                else -> error("Unrecognised resolver type: ${words[0]}")
+            }
+        }.toList()
     }
 }
+
+internal expect suspend fun <T> useLinesOfTextFile(filename: String, block: (Sequence<String>) -> T): T
 
 private fun configureMavenResolver(words: List<String>, factory: (String, String, List<Regex>) -> MavenResolver): MavenResolver {
     val (artifactGroupId, artifactId) = words[0].split(':', limit = 2)

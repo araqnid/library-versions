@@ -11,8 +11,8 @@ private external object FS {
     fun readFile(path: String, encoding: String, callback: (Throwable?, String?) -> Unit)
 }
 
-internal actual suspend fun readTextFile(filename: String): String {
-    return suspendCancellableCoroutine { cont ->
+internal actual suspend fun <T> useLinesOfTextFile(filename: String, block: (Sequence<String>) -> T): T {
+    val content = suspendCancellableCoroutine<String> { cont ->
         FS.readFile(filename, "utf-8") { err, data ->
             if (err == null)
                 cont.resume(data!!)
@@ -20,6 +20,8 @@ internal actual suspend fun readTextFile(filename: String): String {
                 cont.resumeWithException(err)
         }
     }
+
+    return block(content.split("\n").asSequence())
 }
 
 actual object ZuluResolver : Resolver {
