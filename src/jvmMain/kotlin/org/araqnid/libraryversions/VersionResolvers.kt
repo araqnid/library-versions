@@ -17,35 +17,23 @@ import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
 import nu.xom.Builder
-import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.net.URI
-import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
-
-private val logger = LoggerFactory.getLogger("org.araqnid.libraryversions.VersionResolvers")
-
-actual interface Resolver {
-    fun findVersions(httpClient: HttpClient): Flow<String>
-}
 
 actual class MavenResolver actual constructor(repoUrl: String,
                                               private val artifactGroupId: String,
                                               private val artifactId: String,
                                               private val filters: List<Regex>) : Resolver {
-    private val request = HttpRequest.newBuilder()
-            .uri(URI("$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"))
-            .build()
+    private val url = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
-    override fun findVersions(httpClient: HttpClient): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow<String> {
-            val response = httpClient.sendAsync(request, BodyHandlers.ofByteArray()).await()
-            check(response.statusCode() == 200) { "${request.uri()}: ${response.statusCode()} " }
-            logger.info("${request.uri()}: ${response.statusCode()}")
+            val response = httpFetcher.getBinary(url)
 
             val builder = Builder()
-            val doc = builder.build(ByteArrayInputStream(response.body()))
+            val doc = builder.build(ByteArrayInputStream(response.data))
             val strings = doc.query("/metadata/versioning/versions/version").map { it.value ?: "" }
             if (filters.isEmpty()) {
                 val latestVersion = strings.maxBy { parseVersion(it) }
@@ -85,37 +73,6 @@ actual class MavenResolver actual constructor(repoUrl: String,
     }
 }
 
-actual object GradleResolver : Resolver {
-    private val request = HttpRequest.newBuilder()
-            .uri(URI("https://gradle.org/releases/"))
-            .build()
-    private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
-
-    override fun findVersions(httpClient: HttpClient): Flow<String> {
-        return flow {
-            val response = httpClient.sendAsync(request, BodyHandlers.ofString()).await()
-            check(response.statusCode() == 200) { "${request.uri()}: ${response.statusCode()} " }
-            logger.info("${request.uri()}: ${response.statusCode()}")
-
-            val responseText: String = response.body()
-            sequence {
-                var lastPrefix: String? = null
-                for (input in versionPattern.findAll(responseText).map {
-                    parseVersion(it.groupValues[1])
-                }) {
-                    val versionPrefix = "${input.parts[0].number}.${input.parts[1].number}"
-                    if (lastPrefix == null || lastPrefix != versionPrefix) {
-                        yield(input)
-                        lastPrefix = versionPrefix
-                    }
-                }
-            }.take(3).forEach { emit(it.string) }
-        }
-    }
-
-    override fun toString(): String = "Gradle"
-}
-
 actual object ZuluResolver : Resolver {
     private val packagesUrl = URI("http://repos.azulsystems.com/debian/dists/stable/main/binary-amd64/Packages.gz")
     private val request = HttpRequest.newBuilder()
@@ -124,11 +81,9 @@ actual object ZuluResolver : Resolver {
     private val packagesPattern = Regex("""^zulu-(8|1[13-9])""")
 
     @OptIn(FlowPreview::class)
-    override fun findVersions(httpClient: HttpClient): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow {
-            val response = httpClient.sendAsync(request, BodyHandlers.ofPublisher()).await()
-            check(response.statusCode() == 200) { "${request.uri()}: ${response.statusCode()} " }
-            logger.info("${request.uri()}: ${response.statusCode()}")
+            val response = (httpFetcher as JdkHttpFetcher).httpClient.sendAsync(request, BodyHandlers.ofPublisher()).await()
 
             val pattern = Regex("""([A-Za-z0-9-]+): (.*)""")
             val packageFields = mutableMapOf<String, String>()
@@ -158,20 +113,15 @@ actual object ZuluResolver : Resolver {
 }
 
 actual object NodeJsResolver : Resolver {
-    private val url = URI("https://nodejs.org/dist/index.json")
-    private val request = HttpRequest.newBuilder()
-            .uri(url)
-            .build()
+    private const val url = "https://nodejs.org/dist/index.json"
     private val objectMapper = jacksonObjectMapper()
             .registerModule(JavaTimeModule())
 
-    override fun findVersions(httpClient: HttpClient): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow {
-            val response = httpClient.sendAsync(request, BodyHandlers.ofByteArray()).await()
-            check(response.statusCode() == 200) { "${request.uri()}: ${response.statusCode()} " }
-            logger.info("${request.uri()}: ${response.statusCode()}")
+            val response = httpFetcher.getBinary(url)
 
-            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(response.body()).partition { it.lts != null }
+            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(response.data).partition { it.lts != null }
             ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
             nonLtsVersions.maxBy { it.parsedVersion }?.let { emit(it.version) }
         }

@@ -5,15 +5,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.araqnid.libraryversions.js.axios.AxiosInstance
 import org.araqnid.libraryversions.js.axios.getJson
-import org.araqnid.libraryversions.js.axios.getText
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-
-actual interface Resolver {
-    fun findVersions(axios: AxiosInstance): Flow<String>
-}
 
 actual class MavenResolver actual constructor(repoUrl: String,
                                               private val artifactGroupId: String,
@@ -21,11 +15,10 @@ actual class MavenResolver actual constructor(repoUrl: String,
                                               private val filters: List<Regex>) : Resolver {
     private val requestURI = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
-    override fun findVersions(axios: AxiosInstance): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow<String> {
-            val response = axios.getText(requestURI)
-            check(response.status == 200) { "$requestURI: ${response.status} ${response.statusText}" }
-            println("$requestURI: ${response.status} ${response.statusText}")
+            val response = httpFetcher.getText(requestURI)
+
             val strings = parseStringPromise(response.data).await().metadata.versioning[0].versions[0].version.unsafeCast<Array<String>>()
             if (filters.isEmpty()) {
                 val latestVersion = strings.maxBy { parseVersion(it) }
@@ -65,41 +58,12 @@ actual class MavenResolver actual constructor(repoUrl: String,
     }
 }
 
-actual object GradleResolver : Resolver {
-    private const val requestURI = "https://gradle.org/releases/"
-    private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
-
-    override fun findVersions(axios: AxiosInstance): Flow<String> {
-        return flow {
-            val response = axios.getText(requestURI)
-            check(response.status == 200) { "$requestURI: ${response.status} ${response.statusText}" }
-            println("$requestURI: ${response.status} ${response.statusText}")
-
-            val responseText: String = response.data
-            sequence {
-                var lastPrefix: String? = null
-                for (input in versionPattern.findAll(responseText).map {
-                    parseVersion(it.groupValues[1])
-                }) {
-                    val versionPrefix = "${input.parts[0].number}.${input.parts[1].number}"
-                    if (lastPrefix == null || lastPrefix != versionPrefix) {
-                        yield(input)
-                        lastPrefix = versionPrefix
-                    }
-                }
-            }.take(3).forEach { emit(it.string) }
-        }
-    }
-
-    override fun toString(): String = "Gradle"
-}
-
 actual object NodeJsResolver : Resolver {
     private const val requestURI = "https://nodejs.org/dist/index.json"
 
-    override fun findVersions(axios: AxiosInstance): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow {
-            val response = axios.getJson<Array<NodeJsReleaseJson>>(requestURI)
+            val response = (httpFetcher as AxiosHttpFetcher).axios.getJson<Array<NodeJsReleaseJson>>(requestURI)
             check(response.status == 200) { "${requestURI}: ${response.status} ${response.statusText}" }
             println("${requestURI}: ${response.status} ${response.statusText}")
 
@@ -149,7 +113,7 @@ internal actual suspend fun readTextFile(filename: String): String {
 }
 
 actual object ZuluResolver : Resolver {
-    override fun findVersions(axios: AxiosInstance): Flow<String> {
+    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flowOf()
     }
 }

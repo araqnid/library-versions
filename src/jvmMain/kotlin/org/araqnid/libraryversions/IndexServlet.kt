@@ -19,14 +19,14 @@ import kotlinx.html.head
 import kotlinx.html.html
 import kotlinx.html.stream.appendHTML
 import kotlinx.html.title
-import java.net.http.HttpClient
 import javax.servlet.http.HttpServlet
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import kotlin.coroutines.CoroutineContext
 
 class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope by CoroutineScope(appContext) {
-    private val httpClient = HttpClient.newHttpClient()
+    private val httpFetcher = JdkHttpFetcher()
+    private val resolvers = defaultVersionResolvers
 
     @OptIn(FlowPreview::class)
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
@@ -39,8 +39,8 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
         respondAsynchronouslyOrShowError(req, resp, CoroutineName("IndexServlet")) {
             resp.contentType = "text/plain"
 
-            val versions = defaultVersionResolvers.map { resolver ->
-                        resolver.findVersions(httpClient)
+            val versions = resolvers.map { resolver ->
+                        resolver.findVersions(httpFetcher)
                                 .map { version -> resolver to version }
                                 .catch { ex ->
                                     emit(resolver to "FAILED: $ex")

@@ -19,7 +19,7 @@ fun findLatestVersions(configFile: String? = null): Job {
         println("")
 
         loadVersionResolvers(configFile).map { resolver ->
-                    resolver.findVersions(Axios)
+                    resolver.findVersions(AxiosHttpFetcher(Axios))
                             .map { version -> resolver to version }
                             .catch { ex ->
                                 println("- $resolver")

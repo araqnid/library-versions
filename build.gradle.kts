@@ -91,6 +91,7 @@ kotlin {
 
     sourceSets["commonMain"].dependencies {
         implementation(kotlin("stdlib-common"))
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.4")
     }
 
     sourceSets["commonTest"].dependencies {

@@ -1,6 +1,17 @@
 package org.araqnid.libraryversions
 
-expect interface Resolver
+import kotlinx.coroutines.flow.Flow
+
+interface Resolver {
+    fun findVersions(httpFetcher: HttpFetcher): Flow<String>
+}
+
+interface HttpFetcher {
+    suspend fun getText(url: String): Response<String>
+    suspend fun getBinary(url: String): Response<ByteArray>
+
+    data class Response<out T>(val statusCode: Int, val data: T)
+}
 
 val defaultVersionResolvers = listOf(
         mavenCentral("org.jetbrains.kotlinx",
@@ -44,7 +55,6 @@ expect class MavenResolver(repoUrl: String,
                            artifactId: String,
                            filters: List<Regex>) : Resolver
 
-expect object GradleResolver : Resolver
 expect object ZuluResolver : Resolver
 expect object NodeJsResolver : Resolver
 

@@ -10,20 +10,18 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import java.net.http.HttpClient
 
 object Main {
     @JvmStatic
     @OptIn(FlowPreview::class)
     fun main(args: Array<String>) {
-        val httpClient = HttpClient.newHttpClient()
         runBlocking {
             println("Latest Versions")
             println("===============")
             println("")
 
             loadVersionResolvers(if (args.isNotEmpty()) args[0] else null).map { resolver ->
-                        resolver.findVersions(httpClient)
+                        resolver.findVersions(JdkHttpFetcher())
                                 .flowOn(Dispatchers.Default)
                                 .map { version -> resolver to version }
                                 .catch { ex ->
