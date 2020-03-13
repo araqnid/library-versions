@@ -3,10 +3,12 @@ package org.araqnid.libraryversions.js
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.promise
+import org.araqnid.libraryversions.GradleResolver
 import org.araqnid.libraryversions.assertions.assertThat
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.has
 import org.araqnid.libraryversions.js.axios.Axios
+import org.araqnid.libraryversions.mavenCentral
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.js.Promise
 import kotlin.test.AfterTest

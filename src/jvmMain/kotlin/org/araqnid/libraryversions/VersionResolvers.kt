@@ -1,3 +1,4 @@
+@file:JvmName("VersionResolversJVM")
 package org.araqnid.libraryversions
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
@@ -23,54 +24,16 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
 
-val defaultVersionResolvers = listOf(
-        mavenCentral("org.jetbrains.kotlinx", "kotlinx-coroutines-core"),
-        mavenCentral("org.eclipse.jetty", "jetty-server",
-                Regex("""^9""")),
-        mavenCentral("com.google.guava", "guava"),
-        mavenCentral("com.fasterxml.jackson.core", "jackson-core"),
-        mavenCentral("com.google.inject", "guice"),
-        mavenCentral("org.slf4j", "slf4j-api",
-                Regex("""^1\.7""")),
-        mavenCentral("ch.qos.logback", "logback-classic",
-                Regex("""^1\.2""")),
-        mavenCentral("com.google.protobuf", "protobuf-java"),
-        mavenCentral("org.jboss.resteasy", "resteasy-jaxrs",
-                Regex("""^3""")),
-        mavenCentral("org.scala-lang", "scala-library",
-                Regex("""^2\.13"""),
-                Regex("""^2\.12"""),
-                Regex("""^2\.11""")),
-        mavenCentral("org.jetbrains.kotlin", "kotlin-stdlib"),
-        jcenter("org.jetbrains.kotlinx", "kotlinx-html-assembly"),
-        jcenter("com.natpryce", "hamkrest"),
-        GradleResolver,
-        ZuluResolver,
-        NodeJsResolver
-)
-
 private val logger = LoggerFactory.getLogger("org.araqnid.libraryversions.VersionResolvers")
 
-interface Resolver {
+actual interface Resolver {
     fun findVersions(httpClient: HttpClient): Flow<String>
 }
 
-fun mavenCentral(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver(URI("https://repo.maven.apache.org/maven2"),
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver(URI("https://jcenter.bintray.com"),
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-class MavenResolver(repoUrl: URI,
-                    private val artifactGroupId: String,
-                    private val artifactId: String,
-                    private val filters: List<Regex>) : Resolver {
+actual class MavenResolver actual constructor(repoUrl: String,
+                                              private val artifactGroupId: String,
+                                              private val artifactId: String,
+                                              private val filters: List<Regex>) : Resolver {
     private val request = HttpRequest.newBuilder()
             .uri(URI("$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"))
             .build()
@@ -122,7 +85,7 @@ class MavenResolver(repoUrl: URI,
     }
 }
 
-object GradleResolver : Resolver {
+actual object GradleResolver : Resolver {
     private val request = HttpRequest.newBuilder()
             .uri(URI("https://gradle.org/releases/"))
             .build()
@@ -153,7 +116,7 @@ object GradleResolver : Resolver {
     override fun toString(): String = "Gradle"
 }
 
-object ZuluResolver : Resolver {
+actual object ZuluResolver : Resolver {
     private val packagesUrl = URI("http://repos.azulsystems.com/debian/dists/stable/main/binary-amd64/Packages.gz")
     private val request = HttpRequest.newBuilder()
             .uri(packagesUrl)
@@ -194,7 +157,7 @@ object ZuluResolver : Resolver {
     override fun toString(): String = "Zulu"
 }
 
-object NodeJsResolver : Resolver {
+actual object NodeJsResolver : Resolver {
     private val url = URI("https://nodejs.org/dist/index.json")
     private val request = HttpRequest.newBuilder()
             .uri(url)
@@ -235,3 +198,6 @@ object NodeJsResolver : Resolver {
 
     override fun toString(): String = "NodeJs"
 }
+
+@Suppress("RedundantSuspendModifier")
+internal actual suspend fun readTextFile(filename: String): String = filename.reader().readText()

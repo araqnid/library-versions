@@ -1,59 +1,24 @@
-package org.araqnid.libraryversions.js
+package org.araqnid.libraryversions
 
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.araqnid.libraryversions.Version
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.araqnid.libraryversions.js.axios.AxiosInstance
 import org.araqnid.libraryversions.js.axios.getJson
 import org.araqnid.libraryversions.js.axios.getText
-import org.araqnid.libraryversions.parseVersion
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-val defaultVersionResolvers = listOf(
-        mavenCentral("org.jetbrains.kotlinx",
-                "kotlinx-coroutines-core"),
-        mavenCentral("org.eclipse.jetty", "jetty-server",
-                Regex("""^9""")),
-        mavenCentral("com.google.guava", "guava"),
-        mavenCentral("com.fasterxml.jackson.core", "jackson-core"),
-        mavenCentral("com.google.inject", "guice"),
-        mavenCentral("org.slf4j", "slf4j-api",
-                Regex("""^1\.7""")),
-        mavenCentral("ch.qos.logback", "logback-classic",
-                Regex("""^1\.2""")),
-        mavenCentral("com.google.protobuf", "protobuf-java"),
-        mavenCentral("org.jboss.resteasy", "resteasy-jaxrs",
-                Regex("""^3""")),
-        mavenCentral("org.scala-lang", "scala-library",
-                Regex("""^2\.13"""),
-                Regex("""^2\.12"""),
-                Regex("""^2\.11""")),
-        mavenCentral("org.jetbrains.kotlin", "kotlin-stdlib"),
-        jcenter("org.jetbrains.kotlinx", "kotlinx-html-assembly"),
-        jcenter("com.natpryce", "hamkrest"),
-        GradleResolver
-)
-
-interface Resolver {
+actual interface Resolver {
     fun findVersions(axios: AxiosInstance): Flow<String>
 }
 
-fun mavenCentral(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://repo.maven.apache.org/maven2",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://jcenter.bintray.com",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-class MavenResolver(repoUrl: String,
-                    private val artifactGroupId: String,
-                    private val artifactId: String,
-                    private val filters: List<Regex>) : Resolver {
+actual class MavenResolver actual constructor(repoUrl: String,
+                                              private val artifactGroupId: String,
+                                              private val artifactId: String,
+                                              private val filters: List<Regex>) : Resolver {
     private val requestURI = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
     override fun findVersions(axios: AxiosInstance): Flow<String> {
@@ -100,7 +65,7 @@ class MavenResolver(repoUrl: String,
     }
 }
 
-object GradleResolver : Resolver {
+actual object GradleResolver : Resolver {
     private const val requestURI = "https://gradle.org/releases/"
     private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
 
@@ -129,7 +94,7 @@ object GradleResolver : Resolver {
     override fun toString(): String = "Gradle"
 }
 
-object NodeJsResolver : Resolver {
+actual object NodeJsResolver : Resolver {
     private const val requestURI = "https://nodejs.org/dist/index.json"
 
     override fun findVersions(axios: AxiosInstance): Flow<String> {
@@ -165,4 +130,26 @@ private external interface NodeJsReleaseJson {
     val version: String
     val lts: Any // string | boolean
     val security: Boolean
+}
+
+@JsModule("fs")
+private external object FS {
+    fun readFile(path: String, encoding: String, callback: (Throwable?, String?) -> Unit)
+}
+
+internal actual suspend fun readTextFile(filename: String): String {
+    return suspendCancellableCoroutine { cont ->
+        FS.readFile(filename, "utf-8") { err, data ->
+            if (err == null)
+                cont.resume(data!!)
+            else
+                cont.resumeWithException(err)
+        }
+    }
+}
+
+actual object ZuluResolver : Resolver {
+    override fun findVersions(axios: AxiosInstance): Flow<String> {
+        return flowOf()
+    }
 }

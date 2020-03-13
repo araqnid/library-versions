@@ -1,6 +1,6 @@
 @file:JsModule("xml2js")
 
-package org.araqnid.libraryversions.js
+package org.araqnid.libraryversions
 
 import kotlin.js.Promise
 
