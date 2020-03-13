@@ -1,7 +1,5 @@
 package org.araqnid.libraryversions
 
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -54,28 +52,31 @@ interface BufferReaderScope<in O> : FlowCollector<O> {
 private class BufferReaderScopeImpl<in O>(private val input: ReceiveChannel<ByteBuffer>, collector: FlowCollector<O>) :
         BufferReaderScope<O>,
         FlowCollector<O> by collector {
-    private val currentBuffer = atomic<ByteBuffer?>(null)
+    @Volatile
+    private var currentBuffer: ByteBuffer? = null
 
     override suspend fun nextBuffer(): ByteBuffer {
-        currentBuffer.getAndSet(null)?.let { return it }
+        val buffer = currentBuffer
+        if (buffer != null) {
+            currentBuffer = null
+            return buffer
+        }
         return input.receive()
     }
 
     override fun putBackBuffer(buffer: ByteBuffer) {
-        if (!currentBuffer.compareAndSet(null, buffer))
-            error("had already pulled a buffer when putBackBuffer() was called")
+        check(currentBuffer == null) { "had already pulled a buffer when putBackBuffer() was called" }
+        currentBuffer = buffer
     }
 
     override suspend fun readUByte(): Int = buffer().get().toInt() and 0xff
 
     private suspend fun buffer(): ByteBuffer {
         while (true) {
-            val buf = currentBuffer.updateAndGet { maybeBuf ->
-                if (maybeBuf != null && maybeBuf.hasRemaining()) maybeBuf else null
-            }
-            if (buf != null) return buf
-            val next = nextBuffer()
-            currentBuffer.value = next
+            val buffer = currentBuffer
+            if (buffer != null && buffer.hasRemaining())
+                return buffer
+            currentBuffer = input.receive()
         }
     }
 }
