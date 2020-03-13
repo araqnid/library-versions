@@ -7,5 +7,5 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(project(":", configuration = "jvmDefault"))
 }

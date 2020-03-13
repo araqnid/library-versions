@@ -1,5 +1,7 @@
+import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+
 plugins {
-    kotlin("jvm") version "1.3.70"
+    kotlin("multiplatform") version "1.3.70"
     application
 }
 
@@ -9,6 +11,7 @@ application {
 
 repositories {
     jcenter()
+    maven(url = "https://kotlin.bintray.com/kotlin-js-wrappers")
 }
 
 java {
@@ -41,26 +44,65 @@ tasks {
     }
 }
 
-dependencies {
-    implementation("org.slf4j:slf4j-api:${LibraryVersions.slf4j}")
-    implementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
-    implementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
-    implementation("com.google.guava:guava:${LibraryVersions.guava}")
-    api(kotlin("stdlib-jdk8"))
-    api(kotlin("reflect"))
-    implementation("xom:xom:1.3.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${LibraryVersions.jackson}")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${LibraryVersions.jackson}")
-    testImplementation(kotlin("test-junit"))
-    testImplementation("junit:junit:4.13")
-    testImplementation("com.natpryce:hamkrest:${LibraryVersions.hamkrest}")
-    testImplementation("org.mockito:mockito-core:3.2.4")
-    testImplementation("com.timgroup:clocks-testing:1.0.1088")
-    testImplementation("org.araqnid:hamkrest-json:1.1.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
-    runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
-    testRuntimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+kotlin {
+    jvm()
+    js {
+        nodejs {
+
+        }
+    }
+
+    sourceSets["jvmMain"].dependencies {
+        implementation("org.slf4j:slf4j-api:${LibraryVersions.slf4j}")
+        implementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
+        implementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
+        implementation("com.google.guava:guava:${LibraryVersions.guava}")
+        api(kotlin("stdlib-jdk8"))
+        api(kotlin("reflect"))
+        implementation("xom:xom:1.3.4")
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.1")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${LibraryVersions.jackson}")
+        implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${LibraryVersions.jackson}")
+        runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+    }
+
+    sourceSets["jvmTest"].dependencies {
+        implementation(kotlin("test-junit"))
+        implementation("junit:junit:4.13")
+        implementation("com.natpryce:hamkrest:${LibraryVersions.hamkrest}")
+        implementation("org.mockito:mockito-core:3.2.4")
+        implementation("com.timgroup:clocks-testing:1.0.1088")
+        implementation("org.araqnid:hamkrest-json:1.1.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
+        runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+    }
+
+    sourceSets["jsMain"].dependencies {
+        implementation(kotlin("stdlib-js"))
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.4")
+        implementation(npm("axios", "0.19.2"))
+        implementation(npm("xml2js", "0.4.23"))
+        implementation("org.jetbrains:kotlin-extensions:1.0.1-pre.93-kotlin-1.3.70")
+    }
+
+    sourceSets["jsTest"].dependencies {
+        implementation(kotlin("test-js"))
+    }
+}
+
+val compileKotlinJs: Kotlin2JsCompile by tasks
+compileKotlinJs.kotlinOptions {
+    moduleKind = "commonjs"
+}
+
+val compileTestKotlinJs: Kotlin2JsCompile by tasks
+compileTestKotlinJs.kotlinOptions {
+    moduleKind = "commonjs"
+}
+
+tasks.withType<Kotlin2JsCompile>().configureEach {
+    kotlinOptions {
+    }
 }
