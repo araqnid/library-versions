@@ -1,75 +1,10 @@
 package org.araqnid.libraryversions
 
-import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.araqnid.libraryversions.js.axios.getJson
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-
-actual class MavenResolver actual constructor(repoUrl: String,
-                                              private val artifactGroupId: String,
-                                              private val artifactId: String,
-                                              private val filters: List<Regex>) : Resolver {
-    private val requestURI = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
-
-    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
-        return flow {
-            val response = httpFetcher.getText(requestURI)
-
-            val strings = parseStringPromise(response.data).await().metadata.versioning[0].versions[0].version.unsafeCast<Array<String>>()
-            extractLatestMavenVersions(strings.toList(), filters).forEach { emit(it) }
-        }
-    }
-
-    override fun toString(): String {
-        return if (filters.isNotEmpty()) {
-            val combinedFilter = filters.joinToString("|") { it.pattern }
-            "Maven: $artifactGroupId:$artifactId =~ /$combinedFilter/"
-        } else
-            "Maven: $artifactGroupId:$artifactId"
-    }
-}
-
-actual object NodeJsResolver : Resolver {
-    private const val requestURI = "https://nodejs.org/dist/index.json"
-
-    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
-        return flow {
-            val response = (httpFetcher as AxiosHttpFetcher).axios.getJson<Array<NodeJsReleaseJson>>(requestURI)
-            check(response.status == 200) { "${requestURI}: ${response.status} ${response.statusText}" }
-            println("${requestURI}: ${response.status} ${response.statusText}")
-
-            val (ltsVersions, nonLtsVersions) = response.data.asSequence().map { it.toRelease() }.partition { it.lts != null }
-            ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
-            nonLtsVersions.maxBy { it.parsedVersion }?.let { emit(it.version) }
-        }
-    }
-
-    private fun NodeJsReleaseJson.toRelease(): Release = Release(
-            version = version,
-            lts = if (lts == false) null else lts.unsafeCast<String>(),
-            security = security
-    )
-
-    data class Release(
-            val version: String,
-            val lts: String?,
-            val security: Boolean
-    ) {
-        val parsedVersion by lazy { parseVersion(version) }
-    }
-
-    override fun toString(): String = "NodeJs"
-}
-
-private external interface NodeJsReleaseJson {
-    val version: String
-    val lts: Any // string | boolean
-    val security: Boolean
-}
 
 @JsModule("fs")
 private external object FS {
