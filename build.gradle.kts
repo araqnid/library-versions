@@ -47,8 +47,23 @@ tasks {
 kotlin {
     jvm()
     js {
-        nodejs {
+        nodejs()
+    }
 
+    val hostTarget = when (val hostOs = System.getProperty("os.name")) {
+        "Mac OS X" -> macosX64("native")
+        "Linux" -> linuxX64("native")
+        else -> throw GradleException("Host OS '$hostOs' is not supported in Kotlin/Native $project.")
+    }
+
+    hostTarget.apply {
+        val main by compilations.getting
+        val interop by main.cinterops.creating
+
+        binaries {
+            executable {
+                entryPoint = "org.araqnid.libraryversions.main"
+            }
         }
     }
 
@@ -97,6 +112,13 @@ kotlin {
     sourceSets["commonTest"].dependencies {
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
+    }
+
+    sourceSets["nativeMain"].dependencies {
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.4")
+    }
+
+    sourceSets["nativeTest"].dependencies {
     }
 }
 
