@@ -1,22 +1,10 @@
-package org.araqnid.libraryversions.js
+package org.araqnid.libraryversions
 
 import kotlinext.js.js
 import org.araqnid.libraryversions.assertions.assertThat
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.isAbsent
 import org.araqnid.libraryversions.assertions.isEqualTo
-import org.araqnid.libraryversions.js.axios.Dictionary
-import org.araqnid.libraryversions.js.axios.DictionaryEntry
-import org.araqnid.libraryversions.js.axios.asMap
-import org.araqnid.libraryversions.js.axios.component1
-import org.araqnid.libraryversions.js.axios.component2
-import org.araqnid.libraryversions.js.axios.dictionaryOf
-import org.araqnid.libraryversions.js.axios.entries
-import org.araqnid.libraryversions.js.axios.get
-import org.araqnid.libraryversions.js.axios.key
-import org.araqnid.libraryversions.js.axios.keys
-import org.araqnid.libraryversions.js.axios.value
-import org.araqnid.libraryversions.js.axios.values
 import kotlin.test.Test
 
 class DictionaryTest {

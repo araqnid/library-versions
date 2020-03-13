@@ -1,14 +1,11 @@
-package org.araqnid.libraryversions.js
+package org.araqnid.libraryversions
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.promise
-import org.araqnid.libraryversions.AxiosHttpFetcher
-import org.araqnid.libraryversions.GradleResolver
 import org.araqnid.libraryversions.assertions.assertThat
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.has
-import org.araqnid.libraryversions.mavenCentral
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.js.Promise
 import kotlin.test.Test

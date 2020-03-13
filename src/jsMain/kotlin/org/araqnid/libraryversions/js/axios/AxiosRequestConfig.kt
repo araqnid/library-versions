@@ -1,5 +1,7 @@
 package org.araqnid.libraryversions.js.axios
 
+import org.araqnid.libraryversions.Dictionary
+
 external interface AxiosRequestConfig {
     var withCredentials: Boolean // default: false
     var url: String? // default: none

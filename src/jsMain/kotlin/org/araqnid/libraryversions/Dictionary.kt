@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions.js.axios
+package org.araqnid.libraryversions
 
 import kotlinext.js.Object
 

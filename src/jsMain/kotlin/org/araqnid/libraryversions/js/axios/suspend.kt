@@ -3,6 +3,7 @@ package org.araqnid.libraryversions.js.axios
 import kotlinext.js.assign
 import kotlinext.js.jsObject
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.araqnid.libraryversions.Dictionary
 
 suspend fun <T : Any> AxiosInstance.getJson(url: String, config: AxiosRequestConfig = noRequestConfig): AxiosResponse<T> =
         doRequest(assign(config) {

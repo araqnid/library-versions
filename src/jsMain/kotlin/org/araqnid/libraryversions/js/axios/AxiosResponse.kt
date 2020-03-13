@@ -1,5 +1,7 @@
 package org.araqnid.libraryversions.js.axios
 
+import org.araqnid.libraryversions.Dictionary
+
 external interface AxiosResponse<T> {
     val data: T
     val status: Int
