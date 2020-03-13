@@ -58,7 +58,12 @@ kotlin {
 
     hostTarget.apply {
         val main by compilations.getting
-        val interop by main.cinterops.creating
+        val curl by main.cinterops.creating {
+
+        }
+        val libxml2 by main.cinterops.creating {
+
+        }
 
         binaries {
             executable {

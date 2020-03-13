@@ -1,16 +1,16 @@
 package org.araqnid.libraryversions
 
-import interop.CURLE_OK
-import interop.CURLOPT_HEADERDATA
-import interop.CURLOPT_HEADERFUNCTION
-import interop.CURLOPT_URL
-import interop.CURLOPT_WRITEDATA
-import interop.CURLOPT_WRITEFUNCTION
-import interop.curl_easy_cleanup
-import interop.curl_easy_init
-import interop.curl_easy_perform
-import interop.curl_easy_setopt
-import interop.curl_easy_strerror
+import curl.CURLE_OK
+import curl.CURLOPT_HEADERDATA
+import curl.CURLOPT_HEADERFUNCTION
+import curl.CURLOPT_URL
+import curl.CURLOPT_WRITEDATA
+import curl.CURLOPT_WRITEFUNCTION
+import curl.curl_easy_cleanup
+import curl.curl_easy_init
+import curl.curl_easy_perform
+import curl.curl_easy_setopt
+import curl.curl_easy_strerror
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CPointer
