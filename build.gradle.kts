@@ -52,6 +52,8 @@ dependencies {
     api(kotlin("reflect"))
     implementation("xom:xom:1.3.4")
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${LibraryVersions.jackson}")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${LibraryVersions.jackson}")
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13")
     testImplementation("com.natpryce:hamkrest:${LibraryVersions.hamkrest}")

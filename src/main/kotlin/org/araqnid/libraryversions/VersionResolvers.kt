@@ -1,5 +1,13 @@
 package org.araqnid.libraryversions
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -37,7 +45,8 @@ val defaultVersionResolvers = listOf(
         jcenter("org.jetbrains.kotlinx", "kotlinx-html-assembly"),
         jcenter("com.natpryce", "hamkrest"),
         GradleResolver,
-        ZuluResolver
+        ZuluResolver,
+        NodeJsResolver
 )
 
 private val logger = LoggerFactory.getLogger("org.araqnid.libraryversions.VersionResolvers")
@@ -58,7 +67,7 @@ fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex):
                 artifactId,
                 filters.toList())
 
-class MavenResolver(repoUrl : URI,
+class MavenResolver(repoUrl: URI,
                     private val artifactGroupId: String,
                     private val artifactId: String,
                     private val filters: List<Regex>) : Resolver {
@@ -79,8 +88,7 @@ class MavenResolver(repoUrl : URI,
                 val latestVersion = strings.maxBy { parseVersion(it) }
                 if (latestVersion != null)
                     emit(latestVersion)
-            }
-            else {
+            } else {
                 val filterOutputs = arrayOfNulls<Version>(filters.size)
 
                 for (string in strings) {
@@ -109,8 +117,7 @@ class MavenResolver(repoUrl : URI,
         return if (filters.isNotEmpty()) {
             val combinedFilter = Regex(filters.joinToString("|") { it.pattern })
             "Maven: $artifactGroupId:$artifactId =~ /${combinedFilter.pattern}/"
-        }
-        else
+        } else
             "Maven: $artifactGroupId:$artifactId"
     }
 }
@@ -165,15 +172,14 @@ object ZuluResolver : Resolver {
             val versionsForPackages = mutableMapOf<String, MutableList<Version>>()
             response.body().asFlow().flatMapConcat { it.asFlow() }.gunzip().decodeText().splitByLines().collect { line ->
                 if (line.isEmpty()) {
-                    val packageName = packageFields["package"] ?: throw IllegalArgumentException("No 'Package' in package")
-                    val packageVersion = packageFields["version"] ?: throw IllegalArgumentException("No 'Version' in package")
+                    val packageName = packageFields["package"] ?: error("No 'Package' in package")
+                    val packageVersion = packageFields["version"] ?: error("No 'Version' in package")
                     if (packagesPattern.find(packageName) != null)
                         versionsForPackages.getOrPut(packageName) { mutableListOf<Version>() } += parseVersion(
                                 packageVersion)
                     packageFields.clear()
                 } else if (!line.startsWith(' ')) {
-                    val match = pattern.matchEntire(line)
-                            ?: throw IllegalArgumentException("Invalid packages line: $line")
+                    val match = pattern.matchEntire(line) ?: error("Invalid packages line: $line")
                     val (name, value) = match.destructured
                     packageFields[name.toLowerCase()] = value
                 }
@@ -186,4 +192,46 @@ object ZuluResolver : Resolver {
     }
 
     override fun toString(): String = "Zulu"
+}
+
+object NodeJsResolver : Resolver {
+    private val url = URI("https://nodejs.org/dist/index.json")
+    private val request = HttpRequest.newBuilder()
+            .uri(url)
+            .build()
+    private val objectMapper = jacksonObjectMapper()
+            .registerModule(JavaTimeModule())
+
+    override fun findVersions(httpClient: HttpClient): Flow<String> {
+        return flow {
+            val response = httpClient.sendAsync(request, BodyHandlers.ofByteArray()).await()
+            check(response.statusCode() == 200) { "${request.uri()}: ${response.statusCode()} " }
+            logger.info("${request.uri()}: ${response.statusCode()}")
+
+            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(response.body()).partition { it.lts != null }
+            ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
+            nonLtsVersions.maxBy { it.parsedVersion }?.let { emit(it.version) }
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class Release(
+            val version: String,
+            @JsonDeserialize(using = LTSVersionDeserializer::class)
+            val lts: String?,
+            val security: Boolean
+    ) {
+        val parsedVersion by lazy { parseVersion(version) }
+    }
+
+    class LTSVersionDeserializer : StdNodeBasedDeserializer<String>(String::class.java) {
+        override fun convert(root: JsonNode, ctxt: DeserializationContext): String? {
+            return if (root.isBoolean)
+                null
+            else
+                root.asText()
+        }
+    }
+
+    override fun toString(): String = "NodeJs"
 }

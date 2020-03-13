@@ -66,6 +66,7 @@ private fun configureResolver(configLine: String): Resolver {
     val words = configLine.split(Regex("""\s+"""))
     return when (words[0]) {
         "Gradle" -> GradleResolver
+        "NodeJs" -> NodeJsResolver
         "mavenCentral" -> configureMavenResolver(words.drop(1)) { artifactGroupId, artifactId, filters -> mavenCentral(artifactGroupId, artifactId, *filters.toTypedArray()) }
         "jcenter" -> configureMavenResolver(words.drop(1))  { artifactGroupId, artifactId, filters -> jcenter(artifactGroupId, artifactId, *filters.toTypedArray()) }
         "Maven" -> configureMavenResolver(words.drop(2)) { artifactGroupId, artifactId, filters -> MavenResolver(words[1], artifactGroupId, artifactId, filters) }
