@@ -1,18 +1,17 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import java.nio.ByteBuffer
 import java.util.zip.CRC32
 import java.util.zip.Inflater
 
 fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
-    return readBuffers { destination ->
+    return readBuffers {
         try {
             readGzipHeader()
             val crc = CRC32()
-            val inflaterProduced = inflate(crc, destination)
+            val inflaterProduced = inflate(crc)
             val trailer = readGzipTrailer()
             if (crc.value != trailer.theirCrc)
                 error("CRC error in gunzipped content; ourCrc=0x${crc.value.toString(radix=16)} theirCrc=${trailer.theirCrc.toString(radix=16)}")
@@ -25,7 +24,7 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private suspend fun BufferReaderScope.readGzipHeader() {
+private suspend fun BufferReaderScope<*>.readGzipHeader() {
     val crc = CRC32()
     if (readUShort() != GZIP_MAGIC.toUShort()) error("Not in GZIP format")
     if (readUByte() != 8.toUByte()) error("Unsupported compression method")
@@ -54,7 +53,7 @@ private suspend fun BufferReaderScope.readGzipHeader() {
     }
 }
 
-private suspend fun BufferReaderScope.inflate(crc: CRC32, destination: SendChannel<ByteBuffer>): Int {
+private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
     val inflater = Inflater(true)
     var totalBytes = 0
     try {
@@ -69,7 +68,7 @@ private suspend fun BufferReaderScope.inflate(crc: CRC32, destination: SendChann
                     totalBytes += bytesProduced
                     output.flip()
                     crc.update(output.asReadOnlyBuffer())
-                    destination.send(output)
+                    emit(output)
                 }
                 else if (inflater.finished()) {
                     putBackBuffer(buffer)
@@ -92,7 +91,7 @@ private suspend fun BufferReaderScope.inflate(crc: CRC32, destination: SendChann
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private suspend fun BufferReaderScope.readGzipTrailer(): GzipTrailer {
+private suspend fun BufferReaderScope<*>.readGzipTrailer(): GzipTrailer {
     val theirCrc = readUInt()
     val size = readUInt()
     return GzipTrailer(theirCrc.toLong(), size.toInt())

@@ -2,34 +2,32 @@ package org.araqnid.libraryversions
 
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.updateAndGet
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flow
 import java.nio.ByteBuffer
 
-fun <O> Flow<ByteBuffer>.readBuffers(reader: suspend BufferReaderScope.(SendChannel<O>) -> Unit): Flow<O> {
-    return channelFlow {
-        val buffersInputChannel = Channel<ByteBuffer>(capacity = Channel.RENDEZVOUS)
+@OptIn(ExperimentalCoroutinesApi::class)
+fun <O> Flow<ByteBuffer>.readBuffers(reader: suspend BufferReaderScope<O>.() -> Unit): Flow<O> {
+    return flow {
+        coroutineScope {
+            val buffersInputChannel = produce(capacity = Channel.RENDEZVOUS) {
+                collect { send(it) }
+            }
 
-        launch {
-            BufferReaderScopeImpl(buffersInputChannel).reader(channel)
-            buffersInputChannel.cancel()
+            BufferReaderScopeImpl<O>(buffersInputChannel, this@flow).reader()
         }
-
-        collect { buffer ->
-            buffersInputChannel.send(buffer)
-        }
-
-        buffersInputChannel.close()
     }
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-interface BufferReaderScope {
+interface BufferReaderScope<in O> : FlowCollector<O> {
     suspend fun nextBuffer(): ByteBuffer
     fun putBackBuffer(buffer: ByteBuffer)
 
@@ -55,7 +53,9 @@ interface BufferReaderScope {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private class BufferReaderScopeImpl(private val input: ReceiveChannel<ByteBuffer>) : BufferReaderScope {
+private class BufferReaderScopeImpl<in O>(private val input: ReceiveChannel<ByteBuffer>, collector: FlowCollector<O>) :
+        BufferReaderScope<O>,
+        FlowCollector<O> by collector {
     private val currentBuffer = atomic<ByteBuffer?>(null)
 
     override suspend fun nextBuffer(): ByteBuffer {
