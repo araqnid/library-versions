@@ -6,7 +6,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import platform.posix.NULL
 import platform.posix.fclose
 import platform.posix.fgets
 import platform.posix.fopen
@@ -34,7 +33,7 @@ internal actual suspend fun <T> useLinesOfTextFile(filename: String, block: (Seq
             memScoped {
                 val buf = allocArray<ByteVar>(512)
                 val got = fgets(buf, 512, fh)
-                if (got != NULL)
+                if (got != null)
                     buf.toKString().trimEnd()
                 else
                     null
