@@ -24,7 +24,6 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
 }
 
 private suspend fun BufferReaderScope<*>.readGzipHeader() {
-    val crc = CRC32()
     if (readUShort() != GZIP_MAGIC) error("Not in GZIP format")
     if (readUByte() != 8) error("Unsupported compression method")
     val flags = readUByte()
@@ -45,9 +44,7 @@ private suspend fun BufferReaderScope<*>.readGzipHeader() {
         }
     }
     if ((flags and FHCRC) != 0) {
-        val ourCrc = crc.value
-        val theirCrc = readUShort().toLong() and 0xffffffff
-        check(theirCrc == ourCrc) { "GZIP header CRC mismatch: ours=0x${ourCrc.toString(radix=16)} theirs=0x${theirCrc.toString(radix = 16)}"}
+        readUShort()
     }
 }
 
