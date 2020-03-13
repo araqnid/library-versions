@@ -3,9 +3,9 @@ package org.araqnid.libraryversions.js
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.promise
-import org.araqnid.libraryversions.js.assertions.assertThat
-import org.araqnid.libraryversions.js.assertions.equalTo
-import org.araqnid.libraryversions.js.assertions.has
+import org.araqnid.libraryversions.assertions.assertThat
+import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.libraryversions.assertions.has
 import org.araqnid.libraryversions.js.axios.Axios
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.js.Promise

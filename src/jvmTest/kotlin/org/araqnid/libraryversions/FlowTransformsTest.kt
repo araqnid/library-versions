@@ -5,11 +5,11 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.araqnid.libraryversions.js.assertions.assertThat
-import org.araqnid.libraryversions.js.assertions.contains
-import org.araqnid.libraryversions.js.assertions.equalTo
-import org.araqnid.libraryversions.js.assertions.has
-import org.araqnid.libraryversions.js.assertions.present
+import org.araqnid.libraryversions.assertions.assertThat
+import org.araqnid.libraryversions.assertions.contains
+import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.libraryversions.assertions.has
+import org.araqnid.libraryversions.assertions.present
 import org.junit.Test
 import java.nio.ByteBuffer
 

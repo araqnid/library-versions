@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions.js.assertions
+package org.araqnid.libraryversions.assertions
 
 fun describe(v: Any?): String =
         when (v) {

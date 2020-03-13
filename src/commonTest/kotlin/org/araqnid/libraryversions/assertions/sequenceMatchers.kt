@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions.js.assertions
+package org.araqnid.libraryversions.assertions
 
 fun <T> producesSequence(vararg items: T): Matcher<Sequence<T>> {
     return object : Matcher<Sequence<T>> {

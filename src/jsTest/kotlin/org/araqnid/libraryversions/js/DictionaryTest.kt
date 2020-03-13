@@ -1,10 +1,10 @@
 package org.araqnid.libraryversions.js
 
 import kotlinext.js.js
-import org.araqnid.libraryversions.js.assertions.assertThat
-import org.araqnid.libraryversions.js.assertions.equalTo
-import org.araqnid.libraryversions.js.assertions.isAbsent
-import org.araqnid.libraryversions.js.assertions.isEqualTo
+import org.araqnid.libraryversions.assertions.assertThat
+import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.libraryversions.assertions.isAbsent
+import org.araqnid.libraryversions.assertions.isEqualTo
 import org.araqnid.libraryversions.js.axios.Dictionary
 import org.araqnid.libraryversions.js.axios.DictionaryEntry
 import org.araqnid.libraryversions.js.axios.asMap

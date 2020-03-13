@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions.js.assertions
+package org.araqnid.libraryversions.assertions
 
 fun contains(pattern: Regex) = object : Matcher<CharSequence> {
     override fun match(actual: CharSequence): AssertionResult {

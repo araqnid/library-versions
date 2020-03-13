@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions.js.assertions
+package org.araqnid.libraryversions.assertions
 
 import kotlin.test.fail
 
