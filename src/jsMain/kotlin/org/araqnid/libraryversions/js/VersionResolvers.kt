@@ -3,9 +3,11 @@ package org.araqnid.libraryversions.js
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.araqnid.libraryversions.Version
 import org.araqnid.libraryversions.js.axios.AxiosInstance
 import org.araqnid.libraryversions.js.axios.getJson
 import org.araqnid.libraryversions.js.axios.getText
+import org.araqnid.libraryversions.parseVersion
 
 val defaultVersionResolvers = listOf(
         mavenCentral("org.jetbrains.kotlinx",
