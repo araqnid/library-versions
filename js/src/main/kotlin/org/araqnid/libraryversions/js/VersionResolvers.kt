@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.flow
 import org.araqnid.libraryversions.js.axios.AxiosInstance
 import org.araqnid.libraryversions.js.axios.getText
 
-val versionResolvers = listOf(
+val defaultVersionResolvers = listOf(
         mavenCentral("org.jetbrains.kotlinx",
                 "kotlinx-coroutines-core"),
         mavenCentral("org.eclipse.jetty", "jetty-server",

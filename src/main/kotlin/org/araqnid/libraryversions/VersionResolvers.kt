@@ -15,7 +15,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
 
-val versionResolvers = listOf(
+val defaultVersionResolvers = listOf(
         mavenCentral("org.jetbrains.kotlinx", "kotlinx-coroutines-core"),
         mavenCentral("org.eclipse.jetty", "jetty-server",
                 Regex("""^9""")),

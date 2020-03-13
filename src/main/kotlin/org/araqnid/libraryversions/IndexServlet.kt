@@ -39,7 +39,7 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
         respondAsynchronouslyOrShowError(req, resp, CoroutineName("IndexServlet")) {
             resp.contentType = "text/plain"
 
-            val versions = versionResolvers.map { resolver ->
+            val versions = defaultVersionResolvers.map { resolver ->
                         resolver.findVersions(httpClient)
                                 .map { version -> resolver to version }
                                 .catch { ex ->
