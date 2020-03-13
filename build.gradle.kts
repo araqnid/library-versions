@@ -71,10 +71,8 @@ kotlin {
     sourceSets["jvmTest"].dependencies {
         implementation(kotlin("test-junit"))
         implementation("junit:junit:4.13")
-        implementation("com.natpryce:hamkrest:${LibraryVersions.hamkrest}")
         implementation("org.mockito:mockito-core:3.2.4")
         implementation("com.timgroup:clocks-testing:1.0.1088")
-        implementation("org.araqnid:hamkrest-json:1.1.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
         runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
     }

@@ -1,13 +1,13 @@
 package org.araqnid.libraryversions
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.present
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import org.araqnid.libraryversions.js.assertions.assertThat
+import org.araqnid.libraryversions.js.assertions.equalTo
+import org.araqnid.libraryversions.js.assertions.has
+import org.araqnid.libraryversions.js.assertions.present
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
