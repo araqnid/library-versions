@@ -2,7 +2,8 @@ package org.araqnid.libraryversions
 
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.allocArray
-import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.free
+import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -28,18 +29,17 @@ actual class MavenResolver actual constructor(repoUrl: String,
 @Suppress("RedundantSuspendModifier")
 internal actual suspend fun <T> useLinesOfTextFile(filename: String, block: (Sequence<String>) -> T): T {
     val fh = fopen(filename, "r") ?: error("unable to open $filename")
+    val buf = nativeHeap.allocArray<ByteVar>(512)
     return try {
         block(generateSequence {
-            memScoped {
-                val buf = allocArray<ByteVar>(512)
-                val got = fgets(buf, 512, fh)
-                if (got != null)
-                    buf.toKString().trimEnd()
-                else
-                    null
-            }
+            val got = fgets(buf, 512, fh)
+            if (got != null)
+                buf.toKString().trimEnd()
+            else
+                null
         })
     } finally {
+        nativeHeap.free(buf)
         fclose(fh);
     }
 }
