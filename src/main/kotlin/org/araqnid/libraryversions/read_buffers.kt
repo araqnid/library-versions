@@ -26,23 +26,22 @@ fun <O> Flow<ByteBuffer>.readBuffers(reader: suspend BufferReaderScope<O>.() -> 
     }
 }
 
-@OptIn(ExperimentalUnsignedTypes::class)
 interface BufferReaderScope<in O> : FlowCollector<O> {
     suspend fun nextBuffer(): ByteBuffer
     fun putBackBuffer(buffer: ByteBuffer)
 
-    suspend fun readUByte(): UByte
+    suspend fun readUByte(): Int
 
-    suspend fun readUShort(): UShort {
+    suspend fun readUShort(): Int {
         val lo = readUByte()
         val hi = readUByte()
-        return lo.toUShort() or (hi.toUInt() shl 8).toUShort()
+        return lo or (hi shl 8)
     }
 
-    suspend fun readUInt(): UInt {
+    suspend fun readUInt(): Int {
         val lo = readUShort()
         val hi = readUShort()
-        return lo.toUInt() or (hi.toULong() shl 16).toUInt()
+        return lo or (hi shl 16)
     }
 
     suspend fun skipBytes(n: Int) {
@@ -52,7 +51,6 @@ interface BufferReaderScope<in O> : FlowCollector<O> {
     }
 }
 
-@OptIn(ExperimentalUnsignedTypes::class)
 private class BufferReaderScopeImpl<in O>(private val input: ReceiveChannel<ByteBuffer>, collector: FlowCollector<O>) :
         BufferReaderScope<O>,
         FlowCollector<O> by collector {
@@ -68,7 +66,7 @@ private class BufferReaderScopeImpl<in O>(private val input: ReceiveChannel<Byte
             error("had already pulled a buffer when putBackBuffer() was called")
     }
 
-    override suspend fun readUByte(): UByte = buffer().get().toUByte()
+    override suspend fun readUByte(): Int = buffer().get().toInt() and 0xff
 
     private suspend fun buffer(): ByteBuffer {
         while (true) {

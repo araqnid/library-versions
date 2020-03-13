@@ -23,32 +23,30 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
     }
 }
 
-@OptIn(ExperimentalUnsignedTypes::class)
 private suspend fun BufferReaderScope<*>.readGzipHeader() {
     val crc = CRC32()
-    if (readUShort() != GZIP_MAGIC.toUShort()) error("Not in GZIP format")
-    if (readUByte() != 8.toUByte()) error("Unsupported compression method")
+    if (readUShort() != GZIP_MAGIC) error("Not in GZIP format")
+    if (readUByte() != 8) error("Unsupported compression method")
     val flags = readUByte()
     skipBytes(6)
-    if ((flags and FEXTRA.toUByte()) != 0.toUByte()) {
-        val m = readUShort().toInt()
-        skipBytes(m)
+    if ((flags and FEXTRA) != 0) {
+        skipBytes(readUShort())
     }
-    if ((flags and FNAME.toUByte()) != 0.toUByte()) {
+    if ((flags and FNAME) != 0) {
         while (true) {
-            if (readUByte() == 0.toUByte())
+            if (readUByte() == 0)
                 break
         }
     }
-    if ((flags and FCOMMENT.toUByte()) != 0.toUByte()) {
+    if ((flags and FCOMMENT) != 0) {
         while (true) {
-            if (readUByte() == 0.toUByte())
+            if (readUByte() == 0)
                 break
         }
     }
-    if ((flags and FHCRC.toUByte()) != 0.toUByte()) {
-        val theirCrc = (crc.value and 0xffff).toUShort()
-        val ourCrc = readUShort()
+    if ((flags and FHCRC) != 0) {
+        val ourCrc = crc.value
+        val theirCrc = readUShort().toLong() and 0xffffffff
         check(theirCrc == ourCrc) { "GZIP header CRC mismatch: ours=0x${ourCrc.toString(radix=16)} theirs=0x${theirCrc.toString(radix = 16)}"}
     }
 }
@@ -90,11 +88,10 @@ private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
     }
 }
 
-@OptIn(ExperimentalUnsignedTypes::class)
 private suspend fun BufferReaderScope<*>.readGzipTrailer(): GzipTrailer {
     val theirCrc = readUInt()
     val size = readUInt()
-    return GzipTrailer(theirCrc.toLong(), size.toInt())
+    return GzipTrailer(theirCrc.toLong() and 0xffffffff, size)
 }
 
 private data class GzipTrailer(val theirCrc: Long, val size: Int)
