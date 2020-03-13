@@ -53,7 +53,6 @@ private suspend fun BufferReaderScope<*>.readGzipHeader() {
 
 private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
     val inflater = Inflater(true)
-    var totalBytes = 0
     try {
         while (true) {
             val buffer = nextBuffer()
@@ -62,24 +61,25 @@ private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
             while (true) {
                 val output = ByteBuffer.allocate(2048)
                 val bytesProduced = inflater.inflate(output)
-                if (bytesProduced != 0) {
-                    totalBytes += bytesProduced
-                    output.flip()
-                    crc.update(output.asReadOnlyBuffer())
-                    emit(output)
-                }
-                else if (inflater.finished()) {
-                    putBackBuffer(buffer)
-                    return totalBytes
-                }
-                else if (inflater.needsDictionary()) {
-                    throw UnsupportedOperationException("inflater needs dictionary -- not implemented")
-                }
-                else if (inflater.needsInput()) {
-                    break@produce
-                }
-                else {
-                    error("inflater did not produce output, has not finished but does not need input - ???")
+                when {
+                    bytesProduced != 0 -> {
+                        output.flip()
+                        crc.update(output.asReadOnlyBuffer())
+                        emit(output)
+                    }
+                    inflater.finished() -> {
+                        putBackBuffer(buffer)
+                        return inflater.bytesWritten.toInt()
+                    }
+                    inflater.needsDictionary() -> {
+                        throw UnsupportedOperationException("inflater needs dictionary -- not implemented")
+                    }
+                    inflater.needsInput() -> {
+                        break@produce
+                    }
+                    else -> {
+                        error("inflater did not produce output, has not finished but does not need input - ???")
+                    }
                 }
             }
         }
