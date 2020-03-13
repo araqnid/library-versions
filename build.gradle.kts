@@ -90,6 +90,14 @@ kotlin {
     sourceSets["jsTest"].dependencies {
         implementation(kotlin("test-js"))
     }
+
+    sourceSets["commonMain"].dependencies {
+        implementation(kotlin("stdlib-common"))
+    }
+
+    sourceSets["commonTest"].dependencies {
+        implementation(kotlin("test"))
+    }
 }
 
 val compileKotlinJs: Kotlin2JsCompile by tasks
