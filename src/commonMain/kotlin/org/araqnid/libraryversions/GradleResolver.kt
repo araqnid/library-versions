@@ -26,4 +26,6 @@ object GradleResolver : Resolver {
             }.take(3).forEach { emit(it.string) }
         }
     }
+
+    override fun toString() = "Gradle"
 }
