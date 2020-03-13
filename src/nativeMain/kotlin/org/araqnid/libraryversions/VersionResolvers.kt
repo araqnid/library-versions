@@ -32,11 +32,9 @@ internal actual suspend fun <T> useLinesOfTextFile(filename: String, block: (Seq
     val buf = nativeHeap.allocArray<ByteVar>(512)
     return try {
         block(generateSequence {
-            val got = fgets(buf, 512, fh)
-            if (got != null)
+            fgets(buf, 512, fh)?.let {
                 buf.toKString().trimEnd()
-            else
-                null
+            }
         })
     } finally {
         nativeHeap.free(buf)
