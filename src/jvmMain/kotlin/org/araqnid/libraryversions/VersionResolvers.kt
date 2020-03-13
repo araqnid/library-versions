@@ -29,38 +29,13 @@ actual class MavenResolver actual constructor(repoUrl: String,
     private val url = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
     override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
-        return flow<String> {
+        return flow {
             val response = httpFetcher.getBinary(url)
 
             val builder = Builder()
             val doc = builder.build(ByteArrayInputStream(response.data))
             val strings = doc.query("/metadata/versioning/versions/version").map { it.value ?: "" }
-            if (filters.isEmpty()) {
-                val latestVersion = strings.maxBy { parseVersion(it) }
-                if (latestVersion != null)
-                    emit(latestVersion)
-            } else {
-                val filterOutputs = arrayOfNulls<Version>(filters.size)
-
-                for (string in strings) {
-                    val version = parseVersion(string)
-                    for (i in filters.indices) {
-                        if (filters[i].containsMatchIn(string)) {
-                            val latestVersionSeen = filterOutputs[i]
-                            if (latestVersionSeen == null)
-                                filterOutputs[i] = version
-                            else
-                                filterOutputs[i] = latestVersionSeen.coerceAtLeast(version)
-                        }
-                    }
-                }
-
-                for (i in filters.indices) {
-                    val latestVersion = filterOutputs[i]
-                    if (latestVersion != null)
-                        emit(latestVersion.string)
-                }
-            }
+            extractLatestMavenVersions(strings, filters).forEach { emit(it) }
         }
     }
 

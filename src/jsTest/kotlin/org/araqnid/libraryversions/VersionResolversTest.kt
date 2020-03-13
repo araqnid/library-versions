@@ -24,6 +24,11 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
         assertThat(result, has(Collection<*>::size, equalTo(3)))
     }
 
+    @Test
+    fun resolve_nodejs(): Promise<*> = promise {
+        val result = NodeJsResolver.findVersions(testHttpFetcher).toList()
+        assertThat(result, has(Collection<*>::size, equalTo(2)))
+    }
 
     companion object {
         val testHttpFetcher = AxiosHttpFetcher()

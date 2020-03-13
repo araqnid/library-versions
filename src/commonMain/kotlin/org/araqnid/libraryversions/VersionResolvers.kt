@@ -38,23 +38,6 @@ val defaultVersionResolvers = listOf(
         GradleResolver
 )
 
-fun mavenCentral(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://repo.maven.apache.org/maven2",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://jcenter.bintray.com",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
-
-expect class MavenResolver(repoUrl: String,
-                           artifactGroupId: String,
-                           artifactId: String,
-                           filters: List<Regex>) : Resolver
-
 expect object ZuluResolver : Resolver
 expect object NodeJsResolver : Resolver
 

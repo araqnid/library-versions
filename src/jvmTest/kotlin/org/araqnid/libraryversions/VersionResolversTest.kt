@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.araqnid.libraryversions.assertions.assertThat
 import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.libraryversions.assertions.greaterThan
 import org.araqnid.libraryversions.assertions.has
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
@@ -24,6 +25,22 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
         runBlocking {
             val result = GradleResolver.findVersions(testHttpFetcher).toList()
             assertThat(result, has(Collection<*>::size, equalTo(3)))
+        }
+    }
+
+    @Test
+    fun resolve_zulu() {
+        runBlocking {
+            val result = ZuluResolver.findVersions(testHttpFetcher).toList()
+            assertThat(result, has(Collection<*>::size, greaterThan(0)))
+        }
+    }
+
+    @Test
+    fun resolve_nodejs() {
+        runBlocking {
+            val result = NodeJsResolver.findVersions(testHttpFetcher).toList()
+            assertThat(result, has(Collection<*>::size, equalTo(2)))
         }
     }
 
