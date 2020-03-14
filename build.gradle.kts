@@ -1,3 +1,7 @@
+import org.gradle.api.internal.file.AbstractFileCollection
+import org.gradle.api.internal.file.CompositeFileCollection
+import org.gradle.api.internal.file.collections.FileCollectionResolveContext
+import org.gradle.api.internal.tasks.TaskDependencyResolveContext
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
@@ -6,7 +10,7 @@ plugins {
 }
 
 application {
-    mainClassName = "org.araqnid.libraryversions.Main"
+    mainClassName = "org.araqnid.libraryversions.JvmMainKt"
 }
 
 repositories {
@@ -38,7 +42,6 @@ tasks {
         manifest {
             attributes["Implementation-Title"] = "libraryversions"
             attributes["Implementation-Version"] = project.version
-            attributes["X-Service-Class"] = application.mainClassName
             attributes["Automatic-Module-Name"] = "org.araqnid.libraryversions"
         }
     }
@@ -47,7 +50,11 @@ tasks {
 kotlin {
     jvm()
     js {
-        nodejs()
+        nodejs {
+            runTask {
+                args = listOf(file("runIt.js").toString(), file("resolvers.txt").toString())
+            }
+        }
     }
 
     val hostTarget = when (val hostOs = System.getProperty("os.name")) {
@@ -139,5 +146,30 @@ compileTestKotlinJs.kotlinOptions {
 
 tasks.withType<Kotlin2JsCompile>().configureEach {
     kotlinOptions {
+    }
+}
+
+tasks.named("run", JavaExec::class.java).configure {
+    val jvmMainCompileOutput = object : AbstractFileCollection() {
+        override fun getFiles() = setOf(
+                file("build/classes/kotlin/jvm/main"),
+                file("build/processedResources/jvm/main")
+        )
+
+        override fun visitDependencies(context: TaskDependencyResolveContext) {
+            super.visitDependencies(context)
+            context.add(tasks["jvmMainClasses"])
+            context.add(tasks["jvmProcessResources"])
+        }
+
+        override fun getDisplayName() = "Kotlin JVM classes output"
+    }
+    classpath = object : CompositeFileCollection() {
+        override fun visitContents(context: FileCollectionResolveContext) {
+            context.add(configurations["jvmRuntimeClasspath"])
+            context.add(jvmMainCompileOutput)
+        }
+
+        override fun getDisplayName() = "Kotlin JVM main classpath"
     }
 }
