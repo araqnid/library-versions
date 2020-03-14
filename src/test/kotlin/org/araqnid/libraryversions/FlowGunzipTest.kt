@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.zip.GZIPOutputStream
 
-class GunzipTest {
+class FlowGunzipTest {
     @Test
     fun `gunzips single byte buffer in flow`() {
         val gzippedContent = gzip("This is some test content.")
