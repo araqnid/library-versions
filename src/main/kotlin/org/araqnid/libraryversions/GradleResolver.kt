@@ -12,18 +12,34 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.ByteBuffer
 
 object GradleResolver : Resolver {
     private const val url = "https://gradle.org/releases/"
     private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
 
     override fun findVersions(httpClient: HttpClient) = flow {
-        val request = HttpRequest.newBuilder().uri(URI(url)).build()
+        val request = HttpRequest.newBuilder().uri(URI(url)).header("Accept-Encoding", "gzip").build()
         val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofPublisher())
                 .await()
                 .also { verifyOk(request, it) }
 
-        emitAll(response.body().asFlow().flatMapConcat { it.asFlow() }.decodeText().splitByLines().extractVersions().take(3))
+        emitAll(response.body()
+                .asFlow().flatMapConcat { it.asFlow() }
+                .gunzipTE(response)
+                .decodeText()
+                .splitByLines()
+                .extractVersions()
+                .take(3)
+        )
+    }
+
+    private fun Flow<ByteBuffer>.gunzipTE(response: HttpResponse<*>): Flow<ByteBuffer> {
+        return when (val contentEncoding: String? = response.headers().firstValue("content-encoding").orElse(null)) {
+            null -> this
+            "gzip" -> this.gunzip()
+            else -> error("Unhandled Content-Encoding: $contentEncoding")
+        }
     }
 
     private fun Flow<String>.extractVersions() = flow {
