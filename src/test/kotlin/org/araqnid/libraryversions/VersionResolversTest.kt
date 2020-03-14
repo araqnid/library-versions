@@ -7,6 +7,8 @@ import org.araqnid.libraryversions.assertions.assertThat
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.greaterThan
 import org.araqnid.libraryversions.assertions.has
+import org.junit.Assume.assumeFalse
+import org.junit.BeforeClass
 import java.net.http.HttpClient
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
@@ -47,5 +49,12 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
 
     companion object {
         val httpClient by lazy { HttpClient.newHttpClient() }
+
+        @JvmStatic
+        @BeforeClass
+        fun allowDisablingInternetAccess() {
+            val disableExternalIntegration = System.getenv("DISABLE_EXTERNAL_INTEGRRATION")?.toBoolean() ?: false
+            assumeFalse(disableExternalIntegration)
+        }
     }
 }

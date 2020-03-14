@@ -38,6 +38,12 @@ tasks {
             attributes["Automatic-Module-Name"] = "org.araqnid.libraryversions"
         }
     }
+
+    withType<Test> {
+        val disableExternalIntegration: String? by project
+        inputs.property("disableExternalIntegration", disableExternalIntegration)
+        environment("DISABLE_EXTERNAL_INTEGRRATION", (disableExternalIntegration?.toBoolean() ?: false).toString())
+    }
 }
 
 dependencies {
