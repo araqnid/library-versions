@@ -8,7 +8,7 @@ actual class MavenResolver actual constructor(repoUrl: String,
                                               private val artifactGroupId: String,
                                               private val artifactId: String,
                                               private val filters: List<Regex>) : Resolver {
-    private val requestURI = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
+    private val requestURI = mavenMetadataUrl(repoUrl, artifactGroupId, artifactId)
 
     override fun findVersions(httpFetcher: HttpFetcher): Flow<String> {
         return flow {

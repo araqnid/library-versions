@@ -17,6 +17,10 @@ fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex):
                 artifactId,
                 filters.toList())
 
+internal fun mavenMetadataUrl(repoUrl: String,
+                              artifactGroupId: String,
+                              artifactId: String) = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
+
 internal fun extractLatestMavenVersions(strings: List<String>,
                                         filters: List<Regex>): List<String> {
     if (filters.isEmpty()) {

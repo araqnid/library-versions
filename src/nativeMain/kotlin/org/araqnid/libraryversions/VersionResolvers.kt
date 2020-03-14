@@ -13,17 +13,14 @@ import platform.posix.fopen
 
 actual object ZuluResolver : Resolver {
     override fun findVersions(httpFetcher: HttpFetcher): Flow<String> = emptyFlow()
+
+    override fun toString() = "Zulu"
 }
 
 actual object NodeJsResolver : Resolver {
     override fun findVersions(httpFetcher: HttpFetcher): Flow<String> = emptyFlow()
-}
 
-actual class MavenResolver actual constructor(repoUrl: String,
-                                              artifactGroupId: String,
-                                              artifactId: String,
-                                              filters: List<Regex>) : Resolver {
-    override fun findVersions(httpFetcher: HttpFetcher): Flow<String> = emptyFlow()
+    override fun toString() = "NodeJs"
 }
 
 @Suppress("RedundantSuspendModifier")
