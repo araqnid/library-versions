@@ -2,6 +2,7 @@ package org.araqnid.libraryversions
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
@@ -14,9 +15,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 fun CoroutineScope.respondAsynchronously(request: HttpServletRequest, context: CoroutineContext = EmptyCoroutineContext, handler: suspend CoroutineScope.() -> Unit) {
     val asyncContext = request.startAsync()
-    val job = launch(context) {
-        handler()
-    }
+    val job = launch(context, block = handler)
     asyncContext.addListener(object : AsyncListener {
         override fun onComplete(event: AsyncEvent) {
             job.cancel()
@@ -42,7 +41,7 @@ private val logger by lazy { LoggerFactory.getLogger("org.araqnid.libraryversion
 fun CoroutineScope.respondAsynchronouslyOrShowError(request: HttpServletRequest, response: HttpServletResponse, context: CoroutineContext = EmptyCoroutineContext, handler: suspend CoroutineScope.() -> Unit) {
     return respondAsynchronously(request, context) {
         try {
-            handler()
+            coroutineScope(handler)
         } catch (e: Exception) {
             if (!response.isCommitted) {
                 logger.error(e.toString(), e)

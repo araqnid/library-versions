@@ -31,15 +31,12 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
 
     @OptIn(FlowPreview::class)
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val pathInfo = req.pathInfo
-        if (pathInfo != null) {
+        if (req.servletPath != "/") {
             resp.sendError(404)
             return
         }
 
         respondAsynchronouslyOrShowError(req, resp, CoroutineName("IndexServlet")) {
-            resp.contentType = "text/plain"
-
             val versions = resolvers.map { resolver ->
                     resolver.findVersions(httpClient)
                         .map { version -> resolver to version }
