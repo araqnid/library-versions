@@ -3,8 +3,9 @@ package org.araqnid.libraryversions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.araqnid.libraryversions.assertions.anything
 import org.araqnid.libraryversions.assertions.assertThat
-import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.libraryversions.assertions.containsInOrder
 import org.araqnid.libraryversions.assertions.greaterThan
 import org.araqnid.libraryversions.assertions.has
 import org.junit.Assume.assumeFalse
@@ -19,7 +20,7 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
         runBlocking {
             val result = mavenCentral("org.jetbrains.kotlinx",
                     "kotlinx-coroutines-core").findVersions(httpClient).toList()
-            assertThat(result, has(Collection<*>::size, equalTo(1)))
+            assertThat(result, containsInOrder(anything))
         }
     }
 
@@ -27,7 +28,7 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
     fun resolve_gradle() {
         runBlocking {
             val result = GradleResolver.findVersions(httpClient).toList()
-            assertThat(result, has(Collection<*>::size, equalTo(3)))
+            assertThat(result, containsInOrder(anything, anything, anything))
         }
     }
 
@@ -43,7 +44,7 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
     fun resolve_nodejs() {
         runBlocking {
             val result = NodeJsResolver.findVersions(httpClient).toList()
-            assertThat(result, has(Collection<*>::size, equalTo(2)))
+            assertThat(result, containsInOrder(anything, anything))
         }
     }
 
