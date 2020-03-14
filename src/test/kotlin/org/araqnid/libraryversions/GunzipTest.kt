@@ -32,8 +32,8 @@ class GunzipTest {
         val gzippedContent = gzip("This is some test content.")
 
         val flow = flowOf(
-                ByteBuffer.wrap(gzippedContent, 0, 16),
-                ByteBuffer.wrap(gzippedContent, 16, gzippedContent.size - 16)
+            ByteBuffer.wrap(gzippedContent, 0, 16),
+            ByteBuffer.wrap(gzippedContent, 16, gzippedContent.size - 16)
         )
 
         val gunzippedBytes = runBlocking {
@@ -54,7 +54,7 @@ class GunzipTest {
                 flow.gunzip().toByteArray()
             }
             null
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             e
         }
 

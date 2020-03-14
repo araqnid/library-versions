@@ -23,17 +23,18 @@ import java.nio.ByteBuffer
 object NodeJsResolver : Resolver {
     private const val url = "https://nodejs.org/dist/index.json"
     private val objectMapper = jacksonObjectMapper()
-            .registerModule(JavaTimeModule())
+        .registerModule(JavaTimeModule())
 
     override fun findVersions(httpClient: HttpClient): Flow<String> {
         return flow {
             val request = HttpRequest.newBuilder(URI(url)).header("Accept-Encoding", "gzip").build()
             val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofPublisher())
-                    .await()
-                    .also { verifyOk(request, it) }
+                .await()
+                .also { verifyOk(request, it) }
 
             val buffer = response.body().asFlow().flatMapConcat { it.asFlow() }.gunzipTE(response).toList().aggregate()
-            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(buffer.array()).partition { it.lts != null }
+            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(buffer.array())
+                .partition { it.lts != null }
             ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
             nonLtsVersions.maxBy { it.parsedVersion }?.let { emit(it.version) }
         }
@@ -58,10 +59,10 @@ object NodeJsResolver : Resolver {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class Release(
-            val version: String,
-            @JsonDeserialize(using = LTSVersionDeserializer::class)
-            val lts: String?,
-            val security: Boolean
+        val version: String,
+        @JsonDeserialize(using = LTSVersionDeserializer::class)
+        val lts: String?,
+        val security: Boolean
     ) {
         val parsedVersion by lazy { parseVersion(version) }
     }

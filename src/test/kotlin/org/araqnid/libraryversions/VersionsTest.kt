@@ -8,11 +8,17 @@ import kotlin.test.Test
 class VersionsTest {
     @Test
     fun parser_splits_versions_into_parts() {
-        assertThat(parseVersion("1.2.3"), equalTo(Version("1.2.3", listOf(
-                VersionPart("", 1, ""),
-                VersionPart("", 2, ""),
-                VersionPart("", 3, "")
-        ))))
+        assertThat(
+            parseVersion("1.2.3"), equalTo(
+                Version(
+                    "1.2.3", listOf(
+                        VersionPart("", 1, ""),
+                        VersionPart("", 2, ""),
+                        VersionPart("", 3, "")
+                    )
+                )
+            )
+        )
     }
 
     @Test

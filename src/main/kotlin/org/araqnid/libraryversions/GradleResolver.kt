@@ -21,16 +21,16 @@ object GradleResolver : Resolver {
     override fun findVersions(httpClient: HttpClient) = flow {
         val request = HttpRequest.newBuilder().uri(URI(url)).header("Accept-Encoding", "gzip").build()
         val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofPublisher())
-                .await()
-                .also { verifyOk(request, it) }
+            .await()
+            .also { verifyOk(request, it) }
 
         emitAll(response.body()
-                .asFlow().flatMapConcat { it.asFlow() }
-                .gunzipTE(response)
-                .decodeText()
-                .splitByLines()
-                .extractVersions()
-                .take(3)
+            .asFlow().flatMapConcat { it.asFlow() }
+            .gunzipTE(response)
+            .decodeText()
+            .splitByLines()
+            .extractVersions()
+            .take(3)
         )
     }
 

@@ -13,7 +13,9 @@ interface Matcher<in T> : SelfDescribing {
     fun asPredicate(): (T) -> Boolean = { this.match(it) == AssertionResult.Match }
 
     companion object {
-        operator fun <T> invoke(property: KProperty1<T, Boolean>): Matcher<T> = PredicateMatcher(property.name, property)
+        operator fun <T> invoke(property: KProperty1<T, Boolean>): Matcher<T> =
+            PredicateMatcher(property.name, property)
+
         operator fun <T> invoke(name: String, feature: (T) -> Boolean): Matcher<T> = PredicateMatcher(name, feature)
     }
 }
@@ -101,8 +103,12 @@ fun <T> sameInstance(value: T) = object : Matcher<T> {
 infix fun <T> Matcher<T>.or(that: Matcher<T>): Matcher<T> = Disjunction(this, that)
 infix fun <T> Matcher<T>.and(that: Matcher<T>): Matcher<T> = Conjunction(this, that)
 
-fun <T> allOf(matchers: List<Matcher<T>>): Matcher<T> = if (matchers.isEmpty()) anything else matchers.reduce { l, r -> l and r }
-fun <T> anyOf(matchers: List<Matcher<T>>): Matcher<T> = if (matchers.isEmpty()) anything else matchers.reduce { l, r -> l or r }
+fun <T> allOf(matchers: List<Matcher<T>>): Matcher<T> =
+    if (matchers.isEmpty()) anything else matchers.reduce { l, r -> l and r }
+
+fun <T> anyOf(matchers: List<Matcher<T>>): Matcher<T> =
+    if (matchers.isEmpty()) anything else matchers.reduce { l, r -> l or r }
+
 fun <T> allOf(vararg matchers: Matcher<T>): Matcher<T> = allOf(matchers.toList())
 fun <T> anyOf(vararg matchers: Matcher<T>): Matcher<T> = anyOf(matchers.toList())
 
@@ -207,8 +213,12 @@ private class PredicateMatcher<in T>(name: String, private val predicate: (T) ->
     }
 }
 
-private class FeatureMatcher<T, R>(private val name: String, private val feature: (T) -> R, private val featureMatcher: Matcher<R>) :
-        Matcher<T> {
+private class FeatureMatcher<T, R>(
+    private val name: String,
+    private val feature: (T) -> R,
+    private val featureMatcher: Matcher<R>
+) :
+    Matcher<T> {
     override fun match(actual: T): AssertionResult {
         val result = featureMatcher.match(feature(actual))
         if (result is AssertionResult.Mismatch) {
@@ -221,6 +231,8 @@ private class FeatureMatcher<T, R>(private val name: String, private val feature
     override val negatedDescription = "does not have $name that ${featureMatcher.description}"
 }
 
-fun <T, R> has(name: String, feature: (T) -> R, featureMatcher: Matcher<R>): Matcher<T> = FeatureMatcher(name, feature, featureMatcher)
+fun <T, R> has(name: String, feature: (T) -> R, featureMatcher: Matcher<R>): Matcher<T> =
+    FeatureMatcher(name, feature, featureMatcher)
+
 fun <T, R> has(property: KProperty1<T, R>, propertyMatcher: Matcher<R>): Matcher<T> =
-        has(PredicateMatcher.identifierToDescription(property.name), property, propertyMatcher)
+    has(PredicateMatcher.identifierToDescription(property.name), property, propertyMatcher)

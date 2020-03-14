@@ -50,8 +50,8 @@ interface BufferReaderScope<in O> : FlowCollector<O> {
 }
 
 private class BufferReaderScopeImpl<in O>(private val input: ReceiveChannel<ByteBuffer>, collector: FlowCollector<O>) :
-        BufferReaderScope<O>,
-        FlowCollector<O> by collector {
+    BufferReaderScope<O>,
+    FlowCollector<O> by collector {
     @Volatile
     private var currentBuffer: ByteBuffer? = null
 

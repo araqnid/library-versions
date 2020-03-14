@@ -15,9 +15,9 @@ fun Flow<ByteBuffer>.decodeText(charset: Charset = Charsets.UTF_8): Flow<CharBuf
             val output = CharBuffer.allocate(2048)
             val inputWithResidual = residual?.let { prefixBuffer ->
                 ByteBuffer.allocate(prefixBuffer.remaining() + input.limit())!!
-                        .put(prefixBuffer)
-                        .put(input)
-                        .rewind()
+                    .put(prefixBuffer)
+                    .put(input)
+                    .rewind()
             } ?: input
             while (true) {
                 val result = decoder.decode(inputWithResidual, output, false)

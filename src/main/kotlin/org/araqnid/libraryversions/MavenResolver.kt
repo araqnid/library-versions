@@ -9,20 +9,25 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-class MavenResolver(repoUrl: String,
-                    private val artifactGroupId: String,
-                    private val artifactId: String,
-                    private val filters: List<Regex>) : Resolver {
+class MavenResolver(
+    repoUrl: String,
+    private val artifactGroupId: String,
+    private val artifactId: String,
+    private val filters: List<Regex>
+) : Resolver {
     private val url = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
     override fun findVersions(httpClient: HttpClient) = flow {
         val request = HttpRequest.newBuilder(URI(url)).build()
         val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .await()
-                .also { verifyOk(request, it) }
-        extractLatestMavenVersions(Builder().build(ByteArrayInputStream(response.body()))
+            .await()
+            .also { verifyOk(request, it) }
+        extractLatestMavenVersions(
+            Builder().build(ByteArrayInputStream(response.body()))
                 .query("/metadata/versioning/versions/version")
-                .map { it.value ?: "" }, filters).forEach {
+                .map { it.value ?: "" },
+            filters
+        ).forEach {
             emit(it)
         }
     }
@@ -37,25 +42,31 @@ class MavenResolver(repoUrl: String,
 }
 
 fun mavenCentral(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://repo.maven.apache.org/maven2",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
+    MavenResolver(
+        "https://repo.maven.apache.org/maven2",
+        artifactGroupId,
+        artifactId,
+        filters.toList()
+    )
 
 fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex): MavenResolver =
-        MavenResolver("https://jcenter.bintray.com",
-                artifactGroupId,
-                artifactId,
-                filters.toList())
+    MavenResolver(
+        "https://jcenter.bintray.com",
+        artifactGroupId,
+        artifactId,
+        filters.toList()
+    )
 
-private fun extractLatestMavenVersions(strings: Collection<String>,
-                                       filters: List<Regex>): List<String> {
+private fun extractLatestMavenVersions(
+    strings: Collection<String>,
+    filters: List<Regex>
+): List<String> {
     if (filters.isEmpty()) {
         val latestVersion = strings.maxBy { parseVersion(it) }
-        if (latestVersion != null)
-            return listOf(latestVersion)
+        return if (latestVersion != null)
+            listOf(latestVersion)
         else
-            return emptyList()
+            emptyList()
     } else {
         val filterOutputs = arrayOfNulls<Version>(filters.size)
 

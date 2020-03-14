@@ -20,21 +20,21 @@ fun main(args: Array<String>) {
         println("")
 
         loadVersionResolvers(if (args.isNotEmpty()) args[0] else null).map { resolver ->
-                    resolver.findVersions(HttpClient.newHttpClient())
-                            .flowOn(Dispatchers.Default)
-                            .map { version -> resolver to version }
-                            .catch { ex ->
-                                println("- $resolver")
-                                Throwables.getStackTraceAsString(ex).lines().map { "  $it" }.forEach { println(it) }
-                            }
-                }
-                .asFlow()
-                .flattenMerge()
-                .toList()
-                .sortedBy { (resolver, _) -> resolver.toString() }
-                .forEach { (resolver, version) ->
-                    println("- $resolver")
-                    println("  $version")
-                }
+                resolver.findVersions(HttpClient.newHttpClient())
+                    .flowOn(Dispatchers.Default)
+                    .map { version -> resolver to version }
+                    .catch { ex ->
+                        println("- $resolver")
+                        Throwables.getStackTraceAsString(ex).lines().map { "  $it" }.forEach { println(it) }
+                    }
+            }
+            .asFlow()
+            .flattenMerge()
+            .toList()
+            .sortedBy { (resolver, _) -> resolver.toString() }
+            .forEach { (resolver, version) ->
+                println("- $resolver")
+                println("  $version")
+            }
     }
 }

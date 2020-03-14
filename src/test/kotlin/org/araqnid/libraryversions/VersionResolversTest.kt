@@ -18,8 +18,10 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
     @Test
     fun resolve_maven_central_artifact() {
         runBlocking {
-            val result = mavenCentral("org.jetbrains.kotlinx",
-                    "kotlinx-coroutines-core").findVersions(httpClient).toList()
+            val result = mavenCentral(
+                "org.jetbrains.kotlinx",
+                "kotlinx-coroutines-core"
+            ).findVersions(httpClient).toList()
             assertThat(result, containsInOrder(anything))
         }
     }

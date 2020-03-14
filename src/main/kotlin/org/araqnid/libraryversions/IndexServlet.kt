@@ -41,15 +41,15 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
             resp.contentType = "text/plain"
 
             val versions = resolvers.map { resolver ->
-                        resolver.findVersions(httpClient)
-                                .map { version -> resolver to version }
-                                .catch { ex ->
-                                    emit(resolver to "FAILED: $ex")
-                                }
-                    }
-                    .asFlow()
-                    .flattenMerge()
-                    .toList()
+                    resolver.findVersions(httpClient)
+                        .map { version -> resolver to version }
+                        .catch { ex ->
+                            emit(resolver to "FAILED: $ex")
+                        }
+                }
+                .asFlow()
+                .flattenMerge()
+                .toList()
 
             withContext(Dispatchers.IO) {
                 resp.contentType = "text/html"
@@ -69,14 +69,14 @@ class IndexServlet(appContext: CoroutineContext) : HttpServlet(), CoroutineScope
 
                                 dl {
                                     versions.sortedBy { (resolver, _) -> resolver.toString() }
-                                            .forEach { (resolver, version) ->
-                                                dt {
-                                                    +"$resolver"
-                                                }
-                                                dd {
-                                                    +version
-                                                }
+                                        .forEach { (resolver, version) ->
+                                            dt {
+                                                +"$resolver"
                                             }
+                                            dd {
+                                                +version
+                                            }
+                                        }
                                 }
                             }
                         }

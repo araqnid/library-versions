@@ -14,7 +14,11 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
             val inflaterProduced = inflate(crc)
             val trailer = readGzipTrailer()
             if (crc.value != trailer.theirCrc)
-                error("CRC error in gunzipped content; ourCrc=0x${crc.value.toString(radix=16)} theirCrc=${trailer.theirCrc.toString(radix=16)}")
+                error(
+                    "CRC error in gunzipped content;" +
+                            " ourCrc=0x${crc.value.toString(radix = 16)}" +
+                            " theirCrc=${trailer.theirCrc.toString(radix = 16)}"
+                )
             if (inflaterProduced != trailer.size)
                 error("Length differs in gunzipped content; ourSize=$inflaterProduced theirSize=${trailer.size}")
         } catch (e: ClosedReceiveChannelException) {
