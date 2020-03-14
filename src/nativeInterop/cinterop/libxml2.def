@@ -1,7 +1,0 @@
-headers = libxml/SAX2.h
-headerFilter = libxml/*
-
-compilerOpts.osx = -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/libxml2
-compilerOpts.linux = -I/usr/include -I/usr/include/x86_64-linux-gnu
-linkerOpts.osx = -L/opt/local/lib -lxml2
-linkerOpts.linux = -L/usr/lib/x86_64-linux-gnu -lxml2

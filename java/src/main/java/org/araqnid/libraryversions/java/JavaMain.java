@@ -14,8 +14,6 @@ import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.flow.FlowKt;
 import kotlinx.coroutines.future.FutureKt;
 import org.araqnid.libraryversions.GradleResolver;
-import org.araqnid.libraryversions.HttpFetcher;
-import org.araqnid.libraryversions.JdkHttpFetcher;
 import org.araqnid.libraryversions.ZuluResolver;
 import org.jetbrains.annotations.NotNull;
 
@@ -77,7 +75,7 @@ public class JavaMain {
     }
 
     public static void main(String[] args) {
-        HttpFetcher httpFetcher = new JdkHttpFetcher(HttpClient.newHttpClient());
+        HttpClient httpClient = HttpClient.newHttpClient();
 
         CompletableFuture<Unit> delayFuture = callSuspendFunction(EmptyCoroutineContext.INSTANCE, cont -> DelayKt.delay(1000L, cont));
         System.out.println(Instant.now() + " - starting delay");
@@ -86,8 +84,8 @@ public class JavaMain {
 
         for (Flow<?> flow : List.of(
                 FlowKt.flowOf("red", "blue", "orange"),
-                ZuluResolver.INSTANCE.findVersions(httpFetcher),
-                GradleResolver.INSTANCE.findVersions(httpFetcher)
+                ZuluResolver.INSTANCE.findVersions(httpClient),
+                GradleResolver.INSTANCE.findVersions(httpClient)
         )) {
             try {
                 collectFlowEasyWay(flow, new CoroutineName("EasyWay"), item -> {
