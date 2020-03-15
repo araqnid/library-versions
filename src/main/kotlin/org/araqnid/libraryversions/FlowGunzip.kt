@@ -10,17 +10,16 @@ fun Flow<ByteBuffer>.gunzip(): Flow<ByteBuffer> {
     return readBuffers {
         try {
             readGzipHeader()
-            val crc = CRC32()
-            val inflaterProduced = inflate(crc)
-            val trailer = readGzipTrailer()
-            if (crc.value != trailer.theirCrc)
+            val (ourCrc, ourSize) = inflate()
+            val (theirCrc, theirSize) = readGzipTrailer()
+            if (ourCrc != theirCrc)
                 error(
                     "CRC error in gunzipped content;" +
-                            " ourCrc=0x${crc.value.toString(radix = 16)}" +
-                            " theirCrc=${trailer.theirCrc.toString(radix = 16)}"
+                            " ourCrc=0x${ourCrc.toString(radix = 16)}" +
+                            " theirCrc=0x${theirCrc.toString(radix = 16)}"
                 )
-            if (inflaterProduced != trailer.size)
-                error("Length differs in gunzipped content; ourSize=$inflaterProduced theirSize=${trailer.size}")
+            if (ourSize != theirSize)
+                error("Length differs in gunzipped content; ourSize=$ourSize theirSize=${theirSize}")
         } catch (e: ClosedReceiveChannelException) {
             throw IllegalStateException("Truncated GZIP input", e)
         }
@@ -52,7 +51,8 @@ private suspend fun BufferReaderScope<*>.readGzipHeader() {
     }
 }
 
-private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
+private suspend fun BufferReaderScope<ByteBuffer>.inflate(): GzipTrailer {
+    val crc = CRC32()
     val inflater = Inflater(true)
     try {
         while (true) {
@@ -70,7 +70,7 @@ private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
                     }
                     inflater.finished() -> {
                         putBackBuffer(buffer)
-                        return inflater.bytesWritten.toInt()
+                        return GzipTrailer(crc.value, inflater.bytesWritten)
                     }
                     inflater.needsDictionary() -> {
                         throw UnsupportedOperationException("inflater needs dictionary -- not implemented")
@@ -92,10 +92,10 @@ private suspend fun BufferReaderScope<ByteBuffer>.inflate(crc: CRC32): Int {
 private suspend fun BufferReaderScope<*>.readGzipTrailer(): GzipTrailer {
     val theirCrc = readUInt()
     val size = readUInt()
-    return GzipTrailer(theirCrc.toLong() and 0xffffffff, size)
+    return GzipTrailer(theirCrc.toLong() and 0xffffffff, size.toLong())
 }
 
-private data class GzipTrailer(val theirCrc: Long, val size: Int)
+private data class GzipTrailer(val theirCrc: Long, val size: Long)
 
 private const val GZIP_MAGIC: Int = 0x8b1f
 

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.araqnid.libraryversions.assertions.assertThat
+import org.araqnid.libraryversions.assertions.containsSubstring
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.has
 import org.araqnid.libraryversions.assertions.present
@@ -44,7 +45,7 @@ class FlowGunzipTest {
     }
 
     @Test
-    fun `detect truncated input`() {
+    fun `detect input truncated in header`() {
         val gzippedContent = gzip("This is some test content.").sliceArray(0..4)
 
         val flow = flowOf(ByteBuffer.wrap(gzippedContent))
@@ -59,6 +60,68 @@ class FlowGunzipTest {
         }
 
         assertThat(exception, present(has(Throwable::message, present(equalTo("Truncated GZIP input")))))
+    }
+
+    @Test
+    fun `detect input truncated in body`() {
+        val gzippedContent = gzip("This is some test content.").sliceArray(0..16)
+
+        val flow = flowOf(ByteBuffer.wrap(gzippedContent))
+
+        val exception = try {
+            runBlocking {
+                flow.gunzip().toByteArray()
+            }
+            null
+        } catch (e: Exception) {
+            e
+        }
+
+        assertThat(exception, present(has(Throwable::message, present(equalTo("Truncated GZIP input")))))
+    }
+
+    @Test
+    fun `detect input CRC mismatch`() {
+        val gzippedContent = gzip("This is some test content.")
+        val flow = flowOf(ByteBuffer.allocate(gzippedContent.size).apply {
+            put(gzippedContent, 0, gzippedContent.size - 8)
+            putInt(0)
+            put(gzippedContent, gzippedContent.size - 4, 4)
+            rewind()
+        })
+
+        val exception = try {
+            runBlocking {
+                flow.gunzip().toByteArray()
+            }
+            null
+        } catch (e: Exception) {
+            e
+        }
+
+        assertThat(exception, present(has(Throwable::message, present(containsSubstring("CRC error")))))
+    }
+
+    @Test
+    fun `detect input size mismatch`() {
+        val gzippedContent = gzip("This is some test content.")
+        val flow = flowOf(ByteBuffer.allocate(gzippedContent.size).apply {
+            put(gzippedContent, 0, gzippedContent.size - 8)
+            put(gzippedContent, gzippedContent.size - 8, 4)
+            putInt(0)
+            rewind()
+        })
+
+        val exception = try {
+            runBlocking {
+                flow.gunzip().toByteArray()
+            }
+            null
+        } catch (e: Exception) {
+            e
+        }
+
+        assertThat(exception, present(has(Throwable::message, present(containsSubstring("Length differs in gunzipped content")))))
     }
 
     private fun gzip(text: String): ByteArray {
