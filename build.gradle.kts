@@ -63,7 +63,6 @@ dependencies {
 
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13")
-    testImplementation("org.mockito:mockito-core:3.2.4")
     testImplementation("com.timgroup:clocks-testing:1.0.1088")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:${LibraryVersions.kotlinCoroutines}")
