@@ -9,6 +9,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
@@ -30,7 +32,7 @@ object NodeJsResolver : Resolver {
                 .await()
                 .also { verifyOk(request, it) }
 
-            val buffer = response.body().gunzipTE(response).toList().aggregate()
+            val buffer = response.body().flatMapConcat { it.asFlow() }.gunzipTE(response).toList().aggregate()
             val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(buffer.array())
                 .partition { it.lts != null }
             ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }

@@ -2,7 +2,9 @@ package org.araqnid.libraryversions
 
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
 import java.net.URI
@@ -27,7 +29,7 @@ object ZuluResolver : Resolver {
             val pattern = Regex("""([A-Za-z0-9-]+): (.*)""")
             val packageFields = mutableMapOf<String, String>()
             val versionsForPackages = mutableMapOf<String, Version>()
-            response.body().gunzip().decodeText().splitByLines()
+            response.body().flatMapConcat { it.asFlow() }.gunzip().decodeText().splitByLines()
                 .collect { line ->
                     if (line.isEmpty()) {
                         val packageName = packageFields["package"] ?: error("No 'Package' in package")
