@@ -26,16 +26,16 @@ object ZuluResolver : Resolver {
 
             val pattern = Regex("""([A-Za-z0-9-]+): (.*)""")
             val packageFields = mutableMapOf<String, String>()
-            val versionsForPackages = mutableMapOf<String, MutableList<Version>>()
+            val versionsForPackages = mutableMapOf<String, Version>()
             response.body().gunzip().decodeText().splitByLines()
                 .collect { line ->
                     if (line.isEmpty()) {
                         val packageName = packageFields["package"] ?: error("No 'Package' in package")
                         val packageVersion = packageFields["version"] ?: error("No 'Version' in package")
-                        if (packagesPattern.find(packageName) != null)
-                            versionsForPackages.getOrPut(packageName) { mutableListOf<Version>() } += parseVersion(
-                                packageVersion
-                            )
+                        if (packagesPattern.find(packageName) != null) {
+                            val version = parseVersion(packageVersion)
+                            versionsForPackages.merge(packageName, version) { v1, v2 -> v1.coerceAtLeast(v2) }
+                        }
                         packageFields.clear()
                     } else if (!line.startsWith(' ')) {
                         val match = pattern.matchEntire(line) ?: error("Invalid packages line: $line")
@@ -43,8 +43,7 @@ object ZuluResolver : Resolver {
                         packageFields[name.toLowerCase()] = value
                     }
                 }
-            for ((packageName, versions) in versionsForPackages) {
-                val latestVersion = versions.max()!!
+            for ((packageName, latestVersion) in versionsForPackages) {
                 emit(packageName + " " + latestVersion.string)
             }
         }
