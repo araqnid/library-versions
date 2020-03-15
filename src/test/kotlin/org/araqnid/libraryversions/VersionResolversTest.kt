@@ -1,6 +1,6 @@
 package org.araqnid.libraryversions
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.araqnid.libraryversions.assertions.anything
@@ -12,11 +12,14 @@ import org.araqnid.libraryversions.assertions.greaterThan
 import org.araqnid.libraryversions.assertions.has
 import org.junit.Assume.assumeFalse
 import org.junit.BeforeClass
+import org.junit.Rule
 import java.net.http.HttpClient
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 
-class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineContext) {
+class VersionResolversTest {
+    @get:Rule
+    val coroutines = CoroutinesTimeout.seconds(5)
+
     @Test
     fun resolve_maven_central_artifact() {
         val result = runBlocking {
