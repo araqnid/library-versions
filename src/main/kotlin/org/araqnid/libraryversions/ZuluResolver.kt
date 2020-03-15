@@ -32,7 +32,7 @@ object ZuluResolver : Resolver {
                     if (line.isEmpty()) {
                         val packageName = packageFields["package"] ?: error("No 'Package' in package")
                         val packageVersion = packageFields["version"] ?: error("No 'Version' in package")
-                        if (packagesPattern.find(packageName) != null) {
+                        if (packagesPattern.containsMatchIn(packageName)) {
                             val version = parseVersion(packageVersion)
                             versionsForPackages.merge(packageName, version) { v1, v2 -> v1.coerceAtLeast(v2) }
                         }
