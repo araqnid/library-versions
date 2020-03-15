@@ -19,8 +19,10 @@ fun main(args: Array<String>) {
         println("===============")
         println("")
 
+        val httpClient = HttpClient.newHttpClient()
+
         loadVersionResolvers(if (args.isNotEmpty()) args[0] else null).map { resolver ->
-                resolver.findVersions(HttpClient.newHttpClient())
+                resolver.findVersions(httpClient)
                     .flowOn(Dispatchers.Default)
                     .map { version -> resolver to version }
                     .catch { ex ->
