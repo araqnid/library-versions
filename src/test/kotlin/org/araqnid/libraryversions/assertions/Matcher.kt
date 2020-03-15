@@ -33,6 +33,7 @@ sealed class AssertionResult {
     }
 
     class Mismatch(override val description: String) : AssertionResult(), SelfDescribing {
+        fun mapMessage(fn: (String) -> String) = Mismatch(fn(description))
         override fun toString() = "Mismatch[${describe(description)}]"
     }
 }

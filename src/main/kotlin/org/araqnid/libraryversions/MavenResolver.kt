@@ -19,23 +19,35 @@ class MavenResolver(
     private val url = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
     override fun findVersions(httpClient: HttpClient): Flow<String> {
-        return if (filters.isEmpty()) {
-            flow {
-                fetchVersionStrings(httpClient).maxBy { parseVersion(it) }?.let { emit(it) }
+        return when (filters.size) {
+            0 -> {
+                flow {
+                    fetchVersionStrings(httpClient).maxBy { parseVersion(it) }?.let { emit(it) }
+                }
             }
-        } else {
-            flow {
-                val latestVersions = arrayOfNulls<Version>(filters.size)
-                for (versionString in fetchVersionStrings(httpClient)) {
-                    for ((index, filter) in filters.withIndex()) {
-                        val version by lazy(mode = LazyThreadSafetyMode.NONE) { parseVersion(versionString) }
-                        if (filter.containsMatchIn(versionString)) {
-                            latestVersions[index] = latestVersions[index]?.coerceAtLeast(version) ?: version
+            1 -> {
+                val filter = filters.single()
+                flow {
+                    fetchVersionStrings(httpClient)
+                        .filter { filter.containsMatchIn(it) }
+                        .maxBy { parseVersion(it) }
+                        ?.let { emit(it) }
+                }
+            }
+            else -> {
+                flow {
+                    val latestVersions = arrayOfNulls<Version>(filters.size)
+                    for (versionString in fetchVersionStrings(httpClient)) {
+                        for ((index, filter) in filters.withIndex()) {
+                            val version by lazy(mode = LazyThreadSafetyMode.NONE) { parseVersion(versionString) }
+                            if (filter.containsMatchIn(versionString)) {
+                                latestVersions[index] = latestVersions[index]?.coerceAtLeast(version) ?: version
+                            }
                         }
                     }
-                }
-                for (version in latestVersions) {
-                    version?.let { emit(it.string) }
+                    for (version in latestVersions) {
+                        version?.let { emit(it.string) }
+                    }
                 }
             }
         }

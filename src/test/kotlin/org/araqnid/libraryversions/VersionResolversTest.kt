@@ -29,7 +29,19 @@ class VersionResolversTest : CoroutineScope by CoroutineScope(EmptyCoroutineCont
     }
 
     @Test
-    fun resolve_maven_central_artifact_with_filters() {
+    fun resolve_maven_central_artifact_with_single_filter() {
+        val result = runBlocking {
+            mavenCentral(
+                "org.jetbrains.kotlinx",
+                "kotlinx-coroutines-core",
+                Regex("""^1.3""")
+            ).findVersions(httpClient).toList()
+        }
+        assertThat(result, containsInAnyOrder(contains(Regex("""^1.3"""))))
+    }
+
+    @Test
+    fun resolve_maven_central_artifact_with_multiple_filters() {
         val result = runBlocking {
             mavenCentral(
                 "org.jetbrains.kotlinx",
