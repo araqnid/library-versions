@@ -1,5 +1,6 @@
 package org.araqnid.libraryversions
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
 import nu.xom.Builder
@@ -17,19 +18,37 @@ class MavenResolver(
 ) : Resolver {
     private val url = "$repoUrl/${artifactGroupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
 
-    override fun findVersions(httpClient: HttpClient) = flow {
+    override fun findVersions(httpClient: HttpClient): Flow<String> {
+        return if (filters.isEmpty()) {
+            flow {
+                fetchVersionStrings(httpClient).maxBy { parseVersion(it) }?.let { emit(it) }
+            }
+        } else {
+            flow {
+                val latestVersions = arrayOfNulls<Version>(filters.size)
+                for (versionString in fetchVersionStrings(httpClient)) {
+                    for ((index, filter) in filters.withIndex()) {
+                        val version by lazy(mode = LazyThreadSafetyMode.NONE) { parseVersion(versionString) }
+                        if (filter.containsMatchIn(versionString)) {
+                            latestVersions[index] = latestVersions[index]?.coerceAtLeast(version) ?: version
+                        }
+                    }
+                }
+                for (version in latestVersions) {
+                    version?.let { emit(it.string) }
+                }
+            }
+        }
+    }
+
+    private suspend fun fetchVersionStrings(httpClient: HttpClient): Collection<String> {
         val request = HttpRequest.newBuilder(URI(url)).build()
         val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
             .await()
             .also { verifyOk(request, it) }
-        extractLatestMavenVersions(
-            Builder().build(ByteArrayInputStream(response.body()))
-                .query("/metadata/versioning/versions/version")
-                .map { it.value ?: "" },
-            filters
-        ).forEach {
-            emit(it)
-        }
+        return Builder().build(ByteArrayInputStream(response.body()))
+            .query("/metadata/versioning/versions/version")
+            .map { it.value ?: "" }
     }
 
     override fun toString(): String {
@@ -56,39 +75,3 @@ fun jcenter(artifactGroupId: String, artifactId: String, vararg filters: Regex):
         artifactId,
         filters.toList()
     )
-
-private fun extractLatestMavenVersions(
-    strings: Collection<String>,
-    filters: List<Regex>
-): List<String> {
-    if (filters.isEmpty()) {
-        val latestVersion = strings.maxBy { parseVersion(it) }
-        return if (latestVersion != null)
-            listOf(latestVersion)
-        else
-            emptyList()
-    } else {
-        val filterOutputs = arrayOfNulls<Version>(filters.size)
-
-        for (string in strings) {
-            val version = parseVersion(string)
-            for (i in filters.indices) {
-                if (filters[i].containsMatchIn(string)) {
-                    val latestVersionSeen = filterOutputs[i]
-                    if (latestVersionSeen == null)
-                        filterOutputs[i] = version
-                    else
-                        filterOutputs[i] = latestVersionSeen.coerceAtLeast(version)
-                }
-            }
-        }
-
-        return sequence {
-            for (i in filters.indices) {
-                val latestVersion = filterOutputs[i]
-                if (latestVersion != null)
-                    yield(latestVersion.string)
-            }
-        }.toList()
-    }
-}
