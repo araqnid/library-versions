@@ -1,10 +1,8 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.future.await
@@ -20,12 +18,11 @@ object GradleResolver : Resolver {
 
     override fun findVersions(httpClient: HttpClient) = flow {
         val request = HttpRequest.newBuilder().uri(URI(url)).header("Accept-Encoding", "gzip").build()
-        val response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofPublisher())
+        val response = httpClient.sendAsync(request, flowBodyHandler)
             .await()
             .also { verifyOk(request, it) }
 
         emitAll(response.body()
-            .asFlow().flatMapConcat { it.asFlow() }
             .gunzipTE(response)
             .decodeText()
             .splitByLines()

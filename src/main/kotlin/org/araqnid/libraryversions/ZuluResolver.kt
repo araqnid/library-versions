@@ -2,15 +2,12 @@ package org.araqnid.libraryversions
 
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 
 object ZuluResolver : Resolver {
     private val packagesUrl = URI("http://repos.azulsystems.com/debian/dists/stable/main/binary-amd64/Packages.gz")
@@ -24,13 +21,13 @@ object ZuluResolver : Resolver {
         return flow {
             val response = httpClient.sendAsync(
                 request,
-                HttpResponse.BodyHandlers.ofPublisher()
+                flowBodyHandler
             ).await().also { verifyOk(request, it) }
 
             val pattern = Regex("""([A-Za-z0-9-]+): (.*)""")
             val packageFields = mutableMapOf<String, String>()
             val versionsForPackages = mutableMapOf<String, MutableList<Version>>()
-            response.body().asFlow().flatMapConcat { it.asFlow() }.gunzip().decodeText().splitByLines()
+            response.body().gunzip().decodeText().splitByLines()
                 .collect { line ->
                     if (line.isEmpty()) {
                         val packageName = packageFields["package"] ?: error("No 'Package' in package")
