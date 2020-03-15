@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions
+package org.araqnid.libraryversions.server
 
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +19,7 @@ import kotlinx.html.head
 import kotlinx.html.html
 import kotlinx.html.stream.appendHTML
 import kotlinx.html.title
+import org.araqnid.libraryversions.defaultVersionResolvers
 import java.net.http.HttpClient
 import javax.servlet.http.HttpServlet
 import javax.servlet.http.HttpServletRequest

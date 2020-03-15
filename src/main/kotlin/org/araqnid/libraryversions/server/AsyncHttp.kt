@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions
+package org.araqnid.libraryversions.server
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -1,4 +1,4 @@
-package org.araqnid.libraryversions
+package org.araqnid.libraryversions.server
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -15,9 +15,9 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool
 import kotlin.coroutines.CoroutineContext
 
 fun main() {
-    val port by env
+    val port by env { it.toInt() }
 
-    val app = App(port.toInt())
+    val app = App(port)
     Runtime.getRuntime().addShutdownHook(Thread(Runnable {
         app.stop()
     }, "shutdown"))
