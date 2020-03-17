@@ -14,26 +14,6 @@ import org.araqnid.libraryversions.js.axios.Axios
 @JsName("findLatestVersions")
 fun findLatestVersions(configFile: String? = null): Job {
     return GlobalScope.launch {
-        println("Latest Versions")
-        println("===============")
-        println("")
-
-        loadVersionResolvers(configFile).map { resolver ->
-                    resolver.findVersions(AxiosHttpFetcher(Axios))
-                            .map { version -> resolver to version }
-                            .catch { ex ->
-                                println("- $resolver")
-                                console.log(ex)
-                            }
-
-                }
-                .asFlow()
-                .flattenMerge()
-                .toList()
-                .sortedBy { (resolver, _) -> resolver.toString() }
-                .forEach { (resolver, version) ->
-                    println("- $resolver")
-                    println("  $version")
-                }
+        showVersionsOnConsole(loadVersionResolvers(configFile), AxiosHttpFetcher(Axios))
     }
 }
