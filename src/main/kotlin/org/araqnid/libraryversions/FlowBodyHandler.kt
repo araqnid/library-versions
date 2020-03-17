@@ -1,6 +1,7 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.jdk9.asFlow
 import java.net.http.HttpResponse
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletionStage
