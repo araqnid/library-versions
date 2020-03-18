@@ -102,6 +102,6 @@ private fun configureMavenResolver(
 private val logger by lazy { LoggerFactory.getLogger(Resolver::class.java) }
 
 internal fun verifyOk(httpRequest: HttpRequest, httpResponse: HttpResponse<*>) {
-    check(httpResponse.statusCode() == 200) { "${httpRequest.uri()}: ${httpResponse.statusCode()}" }
-    logger.info("${httpRequest.uri()}: ${httpResponse.statusCode()}")
+    check(httpResponse.statusCode() == 200) { "${httpRequest.uri()}: ${httpResponse.version()} ${httpResponse.statusCode()}" }
+    logger.info("${httpRequest.uri()}: ${httpResponse.version()} ${httpResponse.statusCode()}")
 }
