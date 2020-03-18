@@ -18,11 +18,7 @@ class FlowDecodeTextTest {
         val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
         val byteBuffers = inputText.toByteArray().splitIntoChunks().map { ByteBuffer.wrap(it)!! }.asFlow()
         val outputText = runBlocking {
-            val stringBuilder = StringBuilder()
-            byteBuffers.decodeText().collect { chars: CharSequence ->
-                stringBuilder.append(chars)
-            }
-            stringBuilder.toString()
+            byteBuffers.decodeText().joinToString("")
         }
         assertThat(outputText, equalTo(inputText))
     }
