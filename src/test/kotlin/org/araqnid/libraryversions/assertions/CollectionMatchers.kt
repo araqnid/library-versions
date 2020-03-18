@@ -94,12 +94,12 @@ fun <T> containsInAnyOrder(vararg expected: Matcher<T>): Matcher<Collection<T>> 
                             }
                         }
                     }
-                    return AssertionResult.Mismatch(sequence {
-                        yield("item #$index did not match:")
+                    return AssertionResult.Mismatch(buildString {
+                        append("item #$index did not match:")
                         for ((matcher, mismatch) in mismatches) {
-                            yield(" ${describe(matcher)}: ${mismatch.description}")
+                            append("\n ${describe(matcher)}: ${mismatch.description}")
                         }
-                    }.joinToString("\n"))
+                    })
                 }
                 if (remaining.isNotEmpty()) {
                     return AssertionResult.Mismatch("did not have these items: ${describe(remaining.toList())}")
