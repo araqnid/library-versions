@@ -42,17 +42,12 @@ class FlowDecodeTextTest {
         assertThat(exception, present(has(Throwable::message, present(contains(Regex("invalid text: MALFORMED"))))))
     }
 
-    private fun ByteArray.splitIntoChunks(chunkLength: Int = 10) = Sequence {
-        object : Iterator<ByteArray> {
-            private var pos = 0
-
-            override fun hasNext(): Boolean = pos < size
-
-            override fun next(): ByteArray {
-                val chunk = if ((pos + chunkLength) > size) sliceArray(pos until size) else sliceArray(pos until pos + chunkLength)
-                pos += chunkLength
-                return chunk
-            }
+    private fun ByteArray.splitIntoChunks(chunkLength: Int = 10): Sequence<ByteArray> {
+        return (0 until size step chunkLength).asSequence().map { pos ->
+            if ((pos + chunkLength) > size)
+                sliceArray(pos until size)
+            else
+                sliceArray(pos until pos + chunkLength)
         }
     }
 }
