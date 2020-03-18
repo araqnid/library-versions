@@ -8,6 +8,7 @@ import org.araqnid.libraryversions.assertions.contains
 import org.araqnid.libraryversions.assertions.equalTo
 import org.araqnid.libraryversions.assertions.has
 import org.araqnid.libraryversions.assertions.present
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.nio.ByteBuffer
 
@@ -31,13 +32,10 @@ class FlowDecodeTextTest {
         val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
         val byteBuffers = (inputText.toByteArray().splitIntoChunks() + listOf(byteArrayOf(0xc2.toByte())))
             .map { ByteBuffer.wrap(it)!! }.asFlow()
-        val exception = try {
+        val exception = assertThrows(IllegalStateException::class.java) {
             runBlocking {
                 byteBuffers.decodeText().collect()
             }
-            null
-        } catch (e: IllegalStateException) {
-            e
         }
         assertThat(exception, present(has(Throwable::message, present(contains(Regex("invalid text: MALFORMED"))))))
     }
