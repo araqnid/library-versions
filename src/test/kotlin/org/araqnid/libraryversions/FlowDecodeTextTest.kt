@@ -3,11 +3,11 @@ package org.araqnid.libraryversions
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
-import org.araqnid.libraryversions.assertions.assertThat
-import org.araqnid.libraryversions.assertions.contains
-import org.araqnid.libraryversions.assertions.equalTo
-import org.araqnid.libraryversions.assertions.has
-import org.araqnid.libraryversions.assertions.present
+import org.araqnid.kotlin.assertthat.assertThat
+import org.araqnid.kotlin.assertthat.contains
+import org.araqnid.kotlin.assertthat.equalTo
+import org.araqnid.kotlin.assertthat.has
+import org.araqnid.kotlin.assertthat.present
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.nio.ByteBuffer

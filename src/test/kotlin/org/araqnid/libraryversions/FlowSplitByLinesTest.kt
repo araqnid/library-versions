@@ -3,8 +3,8 @@ package org.araqnid.libraryversions
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.araqnid.libraryversions.assertions.assertThat
-import org.araqnid.libraryversions.assertions.equalTo
+import org.araqnid.kotlin.assertthat.assertThat
+import org.araqnid.kotlin.assertthat.equalTo
 import org.junit.Test
 
 class FlowSplitByLinesTest {

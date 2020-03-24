@@ -9,6 +9,7 @@ application {
 
 repositories {
     jcenter()
+    maven(url = "https://dl.bintray.com/araqnid/maven")
 }
 
 java {
@@ -68,5 +69,6 @@ dependencies {
     testImplementation("com.timgroup:clocks-testing:1.0.1088")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:${LibraryVersions.kotlinCoroutines}")
+    testImplementation("org.araqnid.kotlin.assert-that:assert-that:0.0.0")
     testRuntimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
 }

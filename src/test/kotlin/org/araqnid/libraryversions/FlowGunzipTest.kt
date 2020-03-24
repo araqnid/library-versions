@@ -4,11 +4,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
-import org.araqnid.libraryversions.assertions.assertThat
-import org.araqnid.libraryversions.assertions.containsSubstring
-import org.araqnid.libraryversions.assertions.equalTo
-import org.araqnid.libraryversions.assertions.has
-import org.araqnid.libraryversions.assertions.present
+import org.araqnid.kotlin.assertthat.assertThat
+import org.araqnid.kotlin.assertthat.containsSubstring
+import org.araqnid.kotlin.assertthat.equalTo
+import org.araqnid.kotlin.assertthat.has
+import org.araqnid.kotlin.assertthat.present
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer

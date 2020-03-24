@@ -1,8 +1,8 @@
 package org.araqnid.libraryversions
 
-import org.araqnid.libraryversions.assertions.assertThat
-import org.araqnid.libraryversions.assertions.equalTo
-import org.araqnid.libraryversions.assertions.lessThan
+import org.araqnid.kotlin.assertthat.assertThat
+import org.araqnid.kotlin.assertthat.equalTo
+import org.araqnid.kotlin.assertthat.lessThan
 import kotlin.test.Test
 
 class VersionsTest {
