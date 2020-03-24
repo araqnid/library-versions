@@ -39,10 +39,7 @@ class FlowDecodeTextTest {
 
     private fun ByteArray.chunkedSequence(size: Int): Sequence<ByteArray> {
         return (indices step size).asSequence().map { pos ->
-            if ((pos + size) > this.size)
-                sliceArray(pos until this.size)
-            else
-                sliceArray(pos until pos + size)
+            sliceArray(pos until (pos + size).coerceAtMost(this.size))
         }
     }
 }
