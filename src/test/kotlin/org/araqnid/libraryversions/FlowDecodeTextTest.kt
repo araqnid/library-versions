@@ -16,17 +16,18 @@ class FlowDecodeTextTest {
     @Test
     fun decodes_binary_data_as_text() {
         val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
-        val byteBuffers = inputText.toByteArray().splitIntoChunks().map { ByteBuffer.wrap(it)!! }.asFlow()
+        val byteBuffers = inputText.toByteArray().chunkedSequence(10).map { ByteBuffer.wrap(it)!! }.asFlow()
         val outputText = runBlocking {
             byteBuffers.decodeText().joinToString("")
         }
         assertThat(outputText, equalTo(inputText))
+        inputText.chunkedSequence(10)
     }
 
     @Test
     fun detects_trailing_truncated_character() {
         val inputText = "Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему."
-        val byteBuffers = (inputText.toByteArray().splitIntoChunks() + listOf(byteArrayOf(0xc2.toByte())))
+        val byteBuffers = (inputText.toByteArray().chunkedSequence(10) + listOf(byteArrayOf(0xc2.toByte())))
             .map { ByteBuffer.wrap(it)!! }.asFlow()
         val exception = assertThrows(IllegalStateException::class.java) {
             runBlocking {
@@ -36,12 +37,12 @@ class FlowDecodeTextTest {
         assertThat(exception, present(has(Throwable::message, present(contains(Regex("invalid text: MALFORMED"))))))
     }
 
-    private fun ByteArray.splitIntoChunks(chunkLength: Int = 10): Sequence<ByteArray> {
-        return (0 until size step chunkLength).asSequence().map { pos ->
-            if ((pos + chunkLength) > size)
-                sliceArray(pos until size)
+    private fun ByteArray.chunkedSequence(size: Int): Sequence<ByteArray> {
+        return (indices step size).asSequence().map { pos ->
+            if ((pos + size) > this.size)
+                sliceArray(pos until this.size)
             else
-                sliceArray(pos until pos + chunkLength)
+                sliceArray(pos until pos + size)
         }
     }
 }
