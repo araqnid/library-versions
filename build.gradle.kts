@@ -60,6 +60,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${LibraryVersions.jackson}")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${LibraryVersions.jackson}")
+    implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.0.4")
     runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
 
     testImplementation(kotlin("test-junit"))

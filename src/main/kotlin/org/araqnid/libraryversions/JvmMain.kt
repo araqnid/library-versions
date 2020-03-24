@@ -10,10 +10,23 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.araqnid.kotlin.argv.ArgParser
+import org.araqnid.kotlin.argv.ArgType
+import org.araqnid.kotlin.argv.parseArgv
 import java.net.http.HttpClient
+import kotlin.system.exitProcess
 
 @OptIn(FlowPreview::class)
 fun main(args: Array<String>) {
+    val configFile = ArgParser("library-versions").run {
+        val configFile by argument(ArgType.STRING, "Artifact list").optional()
+        if (!parseArgv(args)) {
+            println("Syntax: library-versions ${buildSyntax()}")
+            exitProcess(1)
+        }
+        configFile
+    }
+
     runBlocking {
         println("Latest Versions")
         println("===============")
@@ -21,7 +34,7 @@ fun main(args: Array<String>) {
 
         val httpClient = HttpClient.newHttpClient()
 
-        loadVersionResolvers(if (args.isNotEmpty()) args[0] else null).map { resolver ->
+        loadVersionResolvers(configFile).map { resolver ->
                 resolver.findVersions(httpClient)
                     .flowOn(Dispatchers.Default)
                     .map { version -> resolver to version }
