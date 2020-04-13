@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.jdk9.asFlow
 import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse

@@ -85,6 +85,7 @@ kotlin {
         implementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9:${LibraryVersions.kotlinCoroutines}")
         implementation("com.google.guava:guava:${LibraryVersions.guava}")
         api(kotlin("stdlib-jdk8"))
         api(kotlin("reflect"))
