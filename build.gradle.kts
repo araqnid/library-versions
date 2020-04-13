@@ -5,7 +5,7 @@ import org.gradle.api.internal.tasks.TaskDependencyResolveContext
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.3.70"
+    kotlin("multiplatform") version "1.3.71"
     application
 }
 
