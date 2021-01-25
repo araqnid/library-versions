@@ -28,7 +28,7 @@ class VersionResolversTest {
                 "kotlinx-coroutines-core"
             ).findVersions(httpClient).toList()
         }
-        assertThat(result, containsInOrder(contains(Regex("""^1.3"""))))
+        assertThat(result, containsInOrder(contains(Regex("""^1.4"""))))
     }
 
     @Test
