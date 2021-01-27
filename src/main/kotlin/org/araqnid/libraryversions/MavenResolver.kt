@@ -22,7 +22,7 @@ class MavenResolver(
         return when (filters.size) {
             0 -> {
                 flow {
-                    fetchVersionStrings(httpClient).maxBy { parseVersion(it) }?.let { emit(it) }
+                    fetchVersionStrings(httpClient).maxByOrNull { parseVersion(it) }?.let { emit(it) }
                 }
             }
             1 -> {
@@ -30,7 +30,7 @@ class MavenResolver(
                 flow {
                     fetchVersionStrings(httpClient)
                         .filter { filter.containsMatchIn(it) }
-                        .maxBy { parseVersion(it) }
+                        .maxByOrNull { parseVersion(it) }
                         ?.let { emit(it) }
                 }
             }

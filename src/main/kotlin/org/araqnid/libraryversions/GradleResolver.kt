@@ -1,5 +1,6 @@
 package org.araqnid.libraryversions
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
@@ -18,6 +19,7 @@ object GradleResolver : Resolver {
     private const val url = "https://gradle.org/releases/"
     private val versionPattern = Regex("""<a name="([0-9]\.[0-9.]+)">""")
 
+    @OptIn(FlowPreview::class)
     override fun findVersions(httpClient: HttpClient) = flow {
         val request = HttpRequest.newBuilder().uri(URI(url)).header("Accept-Encoding", "gzip").build()
         val response = httpClient.sendAsync(request, flowBodyHandler)

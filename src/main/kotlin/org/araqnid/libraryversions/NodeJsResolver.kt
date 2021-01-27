@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
@@ -25,6 +26,7 @@ object NodeJsResolver : Resolver {
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
 
+    @OptIn(FlowPreview::class)
     override fun findVersions(httpClient: HttpClient): Flow<String> {
         return flow {
             val request = HttpRequest.newBuilder(URI(url)).header("Accept-Encoding", "gzip").build()
@@ -35,8 +37,8 @@ object NodeJsResolver : Resolver {
             val buffer = response.body().flatMapConcat { it.asFlow() }.gunzipTE(response).toList().aggregate()
             val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(buffer.array())
                 .partition { it.lts != null }
-            ltsVersions.maxBy { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
-            nonLtsVersions.maxBy { it.parsedVersion }?.let { emit(it.version) }
+            ltsVersions.maxByOrNull { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
+            nonLtsVersions.maxByOrNull { it.parsedVersion }?.let { emit(it.version) }
         }
     }
 
