@@ -1,34 +1,30 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 
 fun Flow<CharSequence>.splitByLines(separator: String = "\n"): Flow<String> {
     return flow {
-        var residualPrefix: String? = null
-        collect { text ->
-            var pos = residualPrefix?.let { prefix ->
-                val firstMatch = text.indexOf(separator)
-                if (firstMatch < 0) {
-                    residualPrefix += text
-                    return@collect
-                }
-                emit(buildString(capacity = firstMatch - 0 + prefix.length) {
-                    append(prefix)
-                    append(text, 0, firstMatch)
-                })
-                firstMatch + separator.length
-            } ?: 0
+        val residual = StringBuilder()
+        collect { chunk ->
+            var pos = 0
             while (true) {
-                val nextMatch = text.indexOf(separator, startIndex = pos)
-                if (nextMatch < 0)
+                val nextLineBreak = chunk.indexOf(separator, startIndex = pos)
+                if (nextLineBreak < 0) {
+                    residual.append(chunk, pos, chunk.length)
                     break
-                emit(text.substring(pos, nextMatch))
-                pos = nextMatch + separator.length
+                }
+                if (residual.isNotEmpty()) {
+                    residual.append(chunk, pos, nextLineBreak)
+                    emit(residual.toString())
+                    residual.clear()
+                } else {
+                    emit(chunk.substring(pos, nextLineBreak))
+                }
+                pos = nextLineBreak + separator.length
             }
-            residualPrefix = if (pos == text.length) null else text.substring(pos)
         }
-        residualPrefix?.let { emit(it) }
+        if (residual.isNotEmpty())
+            emit(residual.toString())
     }
 }
