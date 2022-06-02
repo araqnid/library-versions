@@ -1,13 +1,11 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import java.nio.ByteBuffer
 
@@ -15,7 +13,7 @@ import java.nio.ByteBuffer
 fun <O> Flow<ByteBuffer>.readBuffers(reader: suspend BufferReaderScope<O>.() -> Unit): Flow<O> {
     return flow {
         coroutineScope {
-            val buffersInputChannel = produce(capacity = Channel.RENDEZVOUS) {
+            val buffersInputChannel = produce {
                 collect { send(it) }
             }
 
