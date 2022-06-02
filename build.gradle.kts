@@ -67,7 +67,7 @@ dependencies {
         }
     }
 
-    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.1"))
+    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.2"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
