@@ -1,16 +1,13 @@
 package org.araqnid.libraryversions
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonPrimitive
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -19,8 +16,6 @@ import java.nio.ByteBuffer
 
 object NodeJsResolver : Resolver {
     private const val url = "https://nodejs.org/dist/index.json"
-    private val objectMapper = jacksonObjectMapper()
-        .registerModule(JavaTimeModule())
 
     @OptIn(FlowPreview::class)
     override fun findVersions(httpClient: HttpClient): Flow<String> {
@@ -31,9 +26,14 @@ object NodeJsResolver : Resolver {
                 .also { verifyOk(request, it) }
 
             val buffer = response.body().flatMapConcat { it.asFlow() }.gunzipTE(response).toList().aggregate()
-            val (ltsVersions, nonLtsVersions) = objectMapper.readValue<List<Release>>(buffer.array())
-                .partition { it.lts != null }
-            ltsVersions.maxByOrNull { it.parsedVersion }?.let { emit("${it.version} ${it.lts}") }
+            val format = Json {
+                ignoreUnknownKeys = true
+            }
+            val (ltsVersions, nonLtsVersions) = format.decodeFromString<List<Release>>(
+                buffer.array().toString(Charsets.UTF_8)
+            )
+                .partition { it.isLTS }
+            ltsVersions.maxByOrNull { it.parsedVersion }?.let { emit("${it.version} ${it.lts.jsonPrimitive.content}") }
             nonLtsVersions.maxByOrNull { it.parsedVersion }?.let { emit(it.version) }
         }
     }
@@ -55,23 +55,15 @@ object NodeJsResolver : Resolver {
         return output
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Serializable
     data class Release(
         val version: String,
-        @JsonDeserialize(using = LTSVersionDeserializer::class)
-        val lts: String?,
+        val lts: JsonElement,
         val security: Boolean
     ) {
         val parsedVersion by lazy { parseVersion(version) }
-    }
-
-    class LTSVersionDeserializer : StdNodeBasedDeserializer<String>(String::class.java) {
-        override fun convert(root: JsonNode, ctxt: DeserializationContext): String? {
-            return if (root.isBoolean)
-                null
-            else
-                root.asText()
-        }
+        val isLTS: Boolean
+            get() = lts.jsonPrimitive.let { it.isString || it.content != "false" }
     }
 
     override fun toString(): String = "NodeJs"

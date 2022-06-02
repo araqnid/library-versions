@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     application
 }
 
@@ -71,12 +72,11 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
     implementation("com.google.guava:guava:31.1-jre")
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.3.3"))
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
     implementation("xom:xom:1.3.7")
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.10.3"))
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
     runtimeOnly("org.slf4j:slf4j-simple") {
         version {
