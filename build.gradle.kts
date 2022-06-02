@@ -74,7 +74,7 @@ dependencies {
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
     implementation("xom:xom:1.3.7")
-    implementation(platform("com.fasterxml.jackson:jackson-bom:2.10.3"))
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.13.3"))
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
