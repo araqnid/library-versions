@@ -1,14 +1,9 @@
 package org.araqnid.libraryversions
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
-import org.araqnid.kotlin.assertthat.assertThat
-import org.araqnid.kotlin.assertthat.containsSubstring
-import org.araqnid.kotlin.assertthat.equalTo
-import org.araqnid.kotlin.assertthat.has
-import org.araqnid.kotlin.assertthat.present
+import org.araqnid.kotlin.assertthat.*
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -137,7 +132,7 @@ class FlowGunzipTest {
         collect { outputBuffer ->
             outputBuffers += outputBuffer
         }
-        val totalSize = outputBuffers.sumBy { it.limit() }
+        val totalSize = outputBuffers.sumOf { it.limit() }
         val bytes = ByteArray(totalSize)
         var offset = 0
         for (buf in outputBuffers) {

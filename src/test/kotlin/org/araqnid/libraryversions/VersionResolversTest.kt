@@ -3,13 +3,7 @@ package org.araqnid.libraryversions
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.araqnid.kotlin.assertthat.anything
-import org.araqnid.kotlin.assertthat.assertThat
-import org.araqnid.kotlin.assertthat.contains
-import org.araqnid.kotlin.assertthat.containsInAnyOrder
-import org.araqnid.kotlin.assertthat.containsInOrder
-import org.araqnid.kotlin.assertthat.greaterThan
-import org.araqnid.kotlin.assertthat.has
+import org.araqnid.kotlin.assertthat.*
 import org.junit.Assume.assumeFalse
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -28,7 +22,7 @@ class VersionResolversTest {
                 "kotlinx-coroutines-core"
             ).findVersions(httpClient).toList()
         }
-        assertThat(result, containsInOrder(contains(Regex("""^1.4"""))))
+        assertThat(result, containsInOrder(contains(Regex("""^1.6"""))))
     }
 
     @Test

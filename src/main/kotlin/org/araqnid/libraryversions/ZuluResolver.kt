@@ -3,7 +3,6 @@ package org.araqnid.libraryversions
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.future.await
@@ -42,7 +41,7 @@ object ZuluResolver : Resolver {
                     } else if (!line.startsWith(' ')) {
                         val match = pattern.matchEntire(line) ?: error("Invalid packages line: $line")
                         val (name, value) = match.destructured
-                        packageFields[name.toLowerCase()] = value
+                        packageFields[name.lowercase()] = value
                     }
                 }
             for ((packageName, latestVersion) in versionsForPackages) {

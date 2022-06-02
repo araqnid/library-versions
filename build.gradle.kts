@@ -1,20 +1,19 @@
 plugins {
-    kotlin("jvm") version "1.4.10"
+    kotlin("jvm")
     application
 }
 
 application {
-    mainClassName = "org.araqnid.libraryversions.JvmMainKt"
+    mainClass.set("org.araqnid.libraryversions.JvmMainKt")
 }
 
 repositories {
-    jcenter()
-    maven(url = "https://dl.bintray.com/araqnid/maven")
+    mavenCentral()
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks {
@@ -27,8 +26,8 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = "11"
-            freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
+            jvmTarget = "17"
+            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
 
@@ -47,28 +46,55 @@ tasks {
     }
 }
 
+object LibraryVersions {
+    const val slf4j = "1.7.36"
+}
+
 dependencies {
-    implementation("org.slf4j:slf4j-api:${LibraryVersions.slf4j}")
-    implementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
-    implementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9:${LibraryVersions.kotlinCoroutines}")
-    implementation("com.google.guava:guava:${LibraryVersions.guava}")
+    constraints {
+        implementation("xerces:xercesImpl") {
+            version {
+                require("2.12.2")
+            }
+        }
+    }
+
+    implementation("org.slf4j:slf4j-api") {
+        version {
+            strictly("[1.7, 1.8[")
+            prefer(LibraryVersions.slf4j)
+        }
+    }
+
+    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.1"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
+    implementation("com.google.guava:guava:31.1-jre")
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
-    implementation("xom:xom:1.3.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${LibraryVersions.jackson}")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${LibraryVersions.jackson}")
-    implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.0.4")
-    runtimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+    implementation("xom:xom:1.3.7")
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.10.3"))
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
+    runtimeOnly("org.slf4j:slf4j-simple") {
+        version {
+            strictly("[1.7, 1.8[")
+            prefer(LibraryVersions.slf4j)
+        }
+    }
 
     testImplementation(kotlin("test-junit"))
-    testImplementation("junit:junit:4.13")
+    testImplementation("junit:junit:4.13.2")
     testImplementation("com.timgroup:clocks-testing:1.0.1088")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:${LibraryVersions.kotlinCoroutines}")
-    testImplementation("org.araqnid.kotlin.assert-that:assert-that:0.0.1")
-    testRuntimeOnly("org.slf4j:slf4j-simple:${LibraryVersions.slf4j}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug")
+    testImplementation("org.araqnid.kotlin.assert-that:assert-that:0.1.1")
+    testRuntimeOnly("org.slf4j:slf4j-simple") {
+        version {
+            strictly("[1.7, 1.8[")
+            prefer(LibraryVersions.slf4j)
+        }
+    }
 }

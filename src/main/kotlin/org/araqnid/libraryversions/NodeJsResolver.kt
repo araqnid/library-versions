@@ -9,11 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import java.net.URI
 import java.net.http.HttpClient
@@ -51,7 +47,7 @@ object NodeJsResolver : Resolver {
     }
 
     private fun List<ByteBuffer>.aggregate(): ByteBuffer {
-        val output = ByteBuffer.allocate(sumBy { it.limit() })
+        val output = ByteBuffer.allocate(sumOf { it.limit() })
         for (buffer in this) {
             output.put(buffer)
         }
