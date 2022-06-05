@@ -8,8 +8,7 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.Flow as JdkFlow
 
 val flowBodyHandler: HttpResponse.BodyHandler<Flow<List<ByteBuffer>>> =
-    HttpResponse.BodyHandlers.ofPublisher()
-        .adapt { publisher -> publisher.asFlow() }
+    HttpResponse.BodyHandlers.ofPublisher().adapt(JdkFlow.Publisher<List<ByteBuffer>>::asFlow)
 
 private fun <T, U> HttpResponse.BodyHandler<T>.adapt(fn: (T) -> U): HttpResponse.BodyHandler<U> =
     HttpResponse.BodyHandler<U> { responseInfo -> apply(responseInfo).adapt(fn) }
@@ -17,7 +16,7 @@ private fun <T, U> HttpResponse.BodyHandler<T>.adapt(fn: (T) -> U): HttpResponse
 private fun <T, U> HttpResponse.BodySubscriber<T>.adapt(fn: (T) -> U): HttpResponse.BodySubscriber<U> {
     return object : HttpResponse.BodySubscriber<U> {
         override fun getBody(): CompletionStage<U> {
-            return this@adapt.body.thenApply { body -> fn(body) }
+            return this@adapt.body.thenApply(fn)
         }
 
         override fun onSubscribe(subscription: JdkFlow.Subscription) {
