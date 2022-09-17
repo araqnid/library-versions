@@ -76,7 +76,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     api(kotlin("stdlib-jdk8"))
     api(kotlin("reflect"))
-    implementation("xom:xom:1.3.7")
+    implementation("xom:xom:1.3.8")
     implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
     runtimeOnly("org.slf4j:slf4j-simple") {
         version {
