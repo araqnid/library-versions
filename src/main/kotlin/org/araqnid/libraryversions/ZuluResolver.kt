@@ -11,7 +11,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 
 object ZuluResolver : Resolver {
-    private val packagesUrl = URI("http://repos.azulsystems.com/debian/dists/stable/main/binary-amd64/Packages.gz")
+    private val packagesUrl = URI("https://repos.azulsystems.com/debian/dists/stable/main/binary-amd64/Packages.gz")
     private val request = HttpRequest.newBuilder()
         .uri(packagesUrl)
         .build()
