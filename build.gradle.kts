@@ -73,7 +73,7 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
     implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.5.0"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
-    api(kotlin("stdlib-jdk8"))
+    api(kotlin("stdlib"))
     api(kotlin("reflect"))
     implementation("xom:xom:1.3.8")
     implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
