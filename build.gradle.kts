@@ -28,7 +28,6 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
             jvmTarget = "17"
-            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
         }
     }
 
@@ -43,7 +42,7 @@ tasks {
     withType<Test> {
         val disableExternalIntegration: String? by project
         inputs.property("disableExternalIntegration", disableExternalIntegration ?: "")
-        environment("DISABLE_EXTERNAL_INTEGRRATION", (disableExternalIntegration?.toBoolean() ?: false).toString())
+        environment("DISABLE_EXTERNAL_INTEGRATION", (disableExternalIntegration?.toBoolean() ?: false).toString())
     }
 }
 
