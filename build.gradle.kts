@@ -53,16 +53,26 @@ object LibraryVersions {
 dependencies {
     constraints {
         implementation("xerces:xercesImpl") {
+            because("multiple security vulnerabilities")
             version {
                 require("2.12.2")
             }
         }
-    }
 
-    implementation("org.slf4j:slf4j-api") {
-        version {
-            strictly("[1.7, 1.8[")
-            prefer(LibraryVersions.slf4j)
+        implementation("org.slf4j:slf4j-api") {
+            because("all logging written against the slf4j 1 API")
+            version {
+                strictly("[1.7, 1.8[")
+                prefer(LibraryVersions.slf4j)
+            }
+        }
+
+        runtimeOnly("org.slf4j:slf4j-simple") {
+            because("all logging written against the slf4j 1 API")
+            version {
+                strictly("[1.7, 1.8[")
+                prefer(LibraryVersions.slf4j)
+            }
         }
     }
 
@@ -77,12 +87,8 @@ dependencies {
     api(kotlin("reflect"))
     implementation("xom:xom:1.3.8")
     implementation("org.araqnid.kotlin.arg-parser:arg-parser:0.1.2")
-    runtimeOnly("org.slf4j:slf4j-simple") {
-        version {
-            strictly("[1.7, 1.8[")
-            prefer(LibraryVersions.slf4j)
-        }
-    }
+    implementation("org.slf4j:slf4j-api")
+    runtimeOnly("org.slf4j:slf4j-simple")
 
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
@@ -90,10 +96,5 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug")
     testImplementation("org.araqnid.kotlin.assert-that:assert-that:0.1.1")
-    testRuntimeOnly("org.slf4j:slf4j-simple") {
-        version {
-            strictly("[1.7, 1.8[")
-            prefer(LibraryVersions.slf4j)
-        }
-    }
+    testRuntimeOnly("org.slf4j:slf4j-simple")
 }
