@@ -81,7 +81,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk9")
     implementation("com.google.guava:guava:31.1-jre")
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.5.0"))
+    implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.5.1"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     api(kotlin("stdlib"))
     api(kotlin("reflect"))
