@@ -2,6 +2,7 @@ package org.araqnid.libraryversions
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consume
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -21,11 +22,11 @@ import java.nio.ByteBuffer
 fun <O> Flow<ByteBuffer>.readBuffers(reader: suspend BufferReaderScope<O>.() -> Unit): Flow<O> {
     return flow {
         coroutineScope {
-            val buffersInputChannel = produce {
+            produce {
                 collect { send(it) }
+            }.consume {
+                BufferReaderScopeImpl<O>(this, this@flow).reader()
             }
-
-            BufferReaderScopeImpl<O>(buffersInputChannel, this@flow).reader()
         }
     }
 }
