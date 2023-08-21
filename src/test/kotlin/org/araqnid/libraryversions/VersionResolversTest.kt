@@ -22,7 +22,7 @@ class VersionResolversTest {
                 "kotlinx-coroutines-core"
             ).findVersions(httpClient).toList()
         }
-        assertThat(result, containsInOrder(contains(Regex("""^1.6"""))))
+        assertThat(result, containsInOrder(contains(Regex("""^1.7"""))))
     }
 
     @Test
